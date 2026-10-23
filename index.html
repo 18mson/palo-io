@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PALO.IO</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Three.js canvas gets appended here by GameEngine -->
+  <div id="app">
+
+    <!-- ═══ MAIN MENU ═══ -->
+    <div id="main-menu" class="screen active">
+      <div class="menu-bg"></div>
+      <div class="menu-content">
+        <div class="logo">
+          <span class="logo-p">P</span><span class="logo-alo">ALO</span><span class="logo-dot">.</span><span class="logo-io">IO</span>
+        </div>
+        <div class="logo-tagline">TACTICAL BROWSER FPS</div>
+        <div class="menu-buttons">
+          <button class="val-btn primary" id="btn-play">PLAY</button>
+          <button class="val-btn secondary" id="btn-leaderboard">LEADERBOARD</button>
+          <button class="val-btn secondary" id="btn-settings">SETTINGS</button>
+        </div>
+        <div class="menu-version">v1.0.0-alpha · Phase 1</div>
+      </div>
+    </div>
+
+    <!-- ═══ AGENT SELECT ═══ -->
+    <div id="agent-select" class="screen">
+      <div class="agent-select-header">
+        <div class="header-title">SELECT AGENT</div>
+        <div class="header-mode">MODE: <span id="mode-label">DEATHMATCH</span> &nbsp;|&nbsp; MAP: <span style="color:#00f0ff;font-weight:700">ASCENT</span></div>
+      </div>
+      <div class="agent-select-body">
+        <div class="agent-list" id="agent-list">
+          <!-- populated by JS -->
+        </div>
+        <div class="agent-details" id="agent-details">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <div class="agent-select-footer">
+        <button class="val-btn ghost" id="btn-back-menu">← BACK</button>
+        <button class="val-btn primary large" id="btn-confirm-agent">LOCK IN</button>
+      </div>
+    </div>
+
+    <!-- ═══ GAME CONTAINER ═══ -->
+    <div id="game-container" class="screen">
+
+      <!-- Canvas injected by GameEngine -->
+      <div id="canvas-wrapper"></div>
+
+      <!-- Crosshair -->
+      <div id="crosshair">
+        <div class="ch-top"></div>
+        <div class="ch-right"></div>
+        <div class="ch-bottom"></div>
+        <div class="ch-left"></div>
+        <div class="ch-dot"></div>
+      </div>
+
+      <!-- Hitmarker -->
+      <div id="hitmarker">
+        <div class="hm-tl"></div>
+        <div class="hm-tr"></div>
+        <div class="hm-bl"></div>
+        <div class="hm-br"></div>
+      </div>
+
+      <!-- Directional Damage Indicator -->
+      <div id="damage-indicator"></div>
+
+      <!-- Spawn Shield Badge -->
+      <div id="spawn-shield-badge" class="hidden">🛡️ SPAWN SHIELD</div>
+
+      <!-- Sniper Scope Overlay -->
+      <div id="sniper-scope"></div>
+
+      <!-- HUD Top -->
+      <div id="hud-top">
+        <div class="hud-agent-info">
+          <div class="hud-agent-icon" id="hud-agent-icon"></div>
+          <div class="hud-agent-name" id="hud-agent-name">BLAZE</div>
+        </div>
+        <div class="hud-center">
+          <div class="hud-timer" id="hud-timer">05:00</div>
+          <div class="hud-mode-label" id="hud-mode-label">DEATHMATCH</div>
+        </div>
+        <div class="hud-score">
+          <div class="hud-score-label">KILLS</div>
+          <div class="hud-score-value" id="hud-kills">0 / 30</div>
+        </div>
+        <div class="hud-actions">
+          <button class="hud-icon-btn" id="btn-screenshot" title="Take Screenshot (Press P or F2)">📸</button>
+        </div>
+      </div>
+
+      <!-- Screenshot Notification Toast -->
+      <div id="screenshot-toast" class="screenshot-toast hidden">📸 Screenshot Saved!</div>
+
+      <!-- Kill Feed -->
+      <div id="kill-feed"></div>
+
+      <!-- HUD Bottom -->
+      <div id="hud-bottom">
+        <div class="hud-health-section">
+          <div class="hud-health-bar-wrap">
+            <div class="hud-health-bar" id="hud-health-bar"></div>
+          </div>
+          <div class="hud-health-value" id="hud-health-value">100</div>
+          <div class="hud-shield-value" id="hud-shield-value">50</div>
+        </div>
+        <div class="hud-weapon-section">
+          <div class="hud-weapon-slot" id="slot-1">
+            <div class="slot-num">1</div>
+            <div class="slot-name" id="slot-1-name">—</div>
+          </div>
+          <div class="hud-weapon-slot" id="slot-2">
+            <div class="slot-num">2</div>
+            <div class="slot-name" id="slot-2-name">—</div>
+          </div>
+          <div class="hud-ammo">
+            <span id="hud-ammo-mag">25</span>
+            <span class="ammo-sep">/</span>
+            <span id="hud-ammo-reserve" class="ammo-reserve">∞</span>
+          </div>
+          <div class="hud-reload-label" id="hud-reload-label"></div>
+        </div>
+      </div>
+
+      <!-- Hit indicator (screen flash) -->
+      <div id="hit-indicator"></div>
+      <!-- Damage vignette -->
+      <div id="damage-vignette"></div>
+      <!-- Unified Play & Loadout Overlay (Used on game start, death, and pause) -->
+      <div id="play-overlay" class="hidden">
+        <div class="po-content">
+          <div class="po-title" id="po-title">ELIMINATED</div>
+          <div class="po-subtitle" id="po-subtitle">CHOOSE YOUR WEAPON & CLICK TO RESPAWN</div>
+
+          <!-- Weapon Selector -->
+          <div class="po-weapon-label">LOADOUT</div>
+          <div class="death-weapon-picker" id="death-weapon-picker">
+            <button class="death-weapon-btn active" data-weapon="vandal">VANDAL (AR)</button>
+            <button class="death-weapon-btn" data-weapon="spectre">SPECTRE (SMG)</button>
+            <button class="death-weapon-btn" data-weapon="operator">OPERATOR (SNIPER)</button>
+            <button class="death-weapon-btn" data-weapon="odin">ODIN (LMG)</button>
+            <button class="death-weapon-btn" data-weapon="bucky">BUCKY (SHOTGUN)</button>
+          </div>
+
+          <!-- Prominent Click to Play / Respawn Zone -->
+          <div class="po-play-zone" id="po-play-btn">
+            <div class="po-play-icon">🎯</div>
+            <div class="po-play-text" id="po-play-text">CLICK TO PLAY</div>
+            <div class="po-play-sub">Click here to lock aim and deploy</div>
+          </div>
+
+          <!-- Controls Reminder -->
+          <div class="po-controls">
+            <span>[WASD] Move</span>
+            <span>[Space] Jump</span>
+            <span>[Ctrl] Slide-Hop</span>
+            <span>[LMB] Fire</span>
+            <span>[RMB] Scope</span>
+            <span>[1][2] Swap Weapon</span>
+            <span>[R] Reload</span>
+            <span>[P / F2] Screenshot</span>
+            <span>[ESC] Pause</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ END SCREEN ═══ -->
+    <div id="end-screen" class="screen">
+      <div class="end-bg"></div>
+      <div class="end-content">
+        <div class="end-result" id="end-result">VICTORY</div>
+        <div class="end-stats" id="end-stats"></div>
+        <div class="end-buttons">
+          <button class="val-btn primary" id="btn-play-again">PLAY AGAIN</button>
+          <button class="val-btn secondary" id="btn-main-menu-end">MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
