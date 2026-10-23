@@ -74,6 +74,26 @@ export class BotSpawner {
   getAll()    { return this.bots }
   getLiving() { return this.bots.filter(b => !b.isDead) }
 
+  setFrozen(val) {
+    for (const b of this.bots) {
+      b.isFrozen = val
+    }
+  }
+
+  setPassive(val) {
+    for (const b of this.bots) {
+      b.isPassive = val
+    }
+  }
+
+  respawnAll() {
+    for (const b of this.bots) {
+      b.isDead = false
+      b.health = b.maxHealth
+      b._respawn()
+    }
+  }
+
   clearAll() {
     for (const bot of this.bots) bot.destroy()
     this.bots = []

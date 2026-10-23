@@ -22,12 +22,12 @@ export class Deathmatch {
 
   _setupListeners() {
     // Bot died
-    bus.on('bot:died', ({ botId, botName, killer }) => {
+    bus.on('bot:died', ({ botId, botName, killer, isHead }) => {
       if (!this.active) return
       // Only reward player kill if the killer was YOU (or direct player damage)
       if (killer === 'YOU') {
         this.playerKills++
-        bus.emit('dm:kill', { killer: 'YOU', victim: botName, kills: this.playerKills, goal: KILL_GOAL })
+        bus.emit('dm:kill', { killer: 'YOU', victim: botName, kills: this.playerKills, goal: KILL_GOAL, isHead: !!isHead })
         this._checkWin()
       }
     })

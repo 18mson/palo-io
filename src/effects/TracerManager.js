@@ -31,6 +31,75 @@ export class TracerManager {
       opacity: 1,
       depthWrite: false,
     })
+
+    this.headshotSparkMat = new THREE.PointsMaterial({
+      color: 0xffd700,
+      size: 0.22,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+
+    this.rings = []
+  }
+
+  /**
+   * Spawns an explosive Valorant headshot critical effect (golden sparks + expanding energy ring)
+   */
+  addHeadshotSparks(point, camera = null) {
+    // 1. Expanding critical shockwave ring
+    const ringGeo = new THREE.RingGeometry(0.06, 0.16, 16)
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffc700,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    })
+    const ring = new THREE.Mesh(ringGeo, ringMat)
+    ring.position.copy(point)
+    if (camera) {
+      ring.lookAt(camera.position)
+    } else {
+      ring.rotation.x = Math.PI / 2
+    }
+    this.scene.add(ring)
+    this.rings.push({ mesh: ring, life: 0.22, maxLife: 0.22, scale: 1 })
+
+    // 2. High-velocity radiant golden/crimson spark burst (28 particles)
+    const count = 28
+    const positions = new Float32Array(count * 3)
+    const velocities = []
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3]     = point.x
+      positions[i * 3 + 1] = point.y
+      positions[i * 3 + 2] = point.z
+
+      // High-speed spherical radiation with upward pop
+      const theta = Math.random() * Math.PI * 2
+      const phi = (Math.random() - 0.5) * Math.PI
+      const speed = 4.5 + Math.random() * 5.5
+      velocities.push(new THREE.Vector3(
+        Math.cos(phi) * Math.cos(theta) * speed,
+        Math.abs(Math.sin(phi)) * speed + 2.0,
+        Math.cos(phi) * Math.sin(theta) * speed
+      ))
+    }
+
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    const pCloud = new THREE.Points(geo, this.headshotSparkMat.clone())
+    this.scene.add(pCloud)
+
+    this.sparks.push({
+      points: pCloud,
+      velocities,
+      life: 0.32,
+      maxLife: 0.32
+    })
   }
 
   /**
@@ -151,6 +220,22 @@ export class TracerManager {
         s.points.material.opacity = s.life / s.maxLife
       }
     }
+    // ── Update Expanding Rings ──
+    for (let i = this.rings.length - 1; i >= 0; i--) {
+      const r = this.rings[i]
+      r.life -= dt
+      if (r.life <= 0) {
+        this.scene.remove(r.mesh)
+        r.mesh.geometry.dispose()
+        r.mesh.material.dispose()
+        this.rings.splice(i, 1)
+      } else {
+        const p = 1 - r.life / r.maxLife
+        const s = 1.0 + p * 3.5
+        r.mesh.scale.set(s, s, s)
+        r.mesh.material.opacity = (r.life / r.maxLife) * 0.95
+      }
+    }
   }
 
   clear() {
@@ -162,7 +247,12 @@ export class TracerManager {
       this.scene.remove(s.points)
       s.points.geometry.dispose()
     }
+    for (const r of this.rings) {
+      this.scene.remove(r.mesh)
+      r.mesh.geometry.dispose()
+    }
     this.tracers = []
     this.sparks  = []
+    this.rings   = []
   }
 }

@@ -11,11 +11,12 @@ import { AgentSelect }      from './ui/AgentSelect.js'
 import { EndScreen }        from './ui/EndScreen.js'
 import { bus }              from './core/EventBus.js'
 import { getSafeSpawnPoint }  from './core/SpawnSystem.js'
+import { MapExplorer }        from './debug/MapExplorer.js'
 import ascentMap            from './map/maps/ascent.json'
 
 // ── State ──────────────────────────────────────────────
 let engine, mapLoader, mapCollision, player, bots, dm, hud
-let tracerManager, agentSelect, endScreen
+let tracerManager, agentSelect, endScreen, mapExplorer
 let currentAgent = null
 let currentWeapon = 'vandal'
 let spawnPoints  = []
@@ -53,7 +54,15 @@ function setupMenuButtons() {
   document.getElementById('btn-play').addEventListener('click', () => {
     hideAll()
     agentSelect.show(
-      (agent, weaponId) => startGame(agent, weaponId),
+      (agent, weaponId) => startGame(agent, weaponId, false),
+      () => showMainMenu()
+    )
+  })
+
+  document.getElementById('btn-explore').addEventListener('click', () => {
+    hideAll()
+    agentSelect.show(
+      (agent, weaponId) => startGame(agent, weaponId, true),
       () => showMainMenu()
     )
   })
@@ -68,7 +77,7 @@ function setupMenuButtons() {
 }
 
 // ── Start Game ─────────────────────────────────────────
-async function startGame(agent, chosenWeaponId = 'vandal') {
+async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false) {
   currentAgent  = agent
   currentWeapon = chosenWeaponId
   hideAll()
@@ -81,11 +90,11 @@ async function startGame(agent, chosenWeaponId = 'vandal') {
   // Load map
   await mapLoader.load(ascentMap)
   spawnPoints  = mapLoader.getSpawnPoints(ascentMap)
-  mapCollision = new MapCollision(mapLoader.getColliders())
+  mapCollision = new MapCollision(mapLoader.getColliders(), mapLoader.getRamps())
 
-  // Player with tracer manager
+  // Player with tracer manager and dedicated viewmodel overlay camera
   const startPos = getSafeSpawnPoint(spawnPoints, [])
-  player = new PlayerController(engine.camera, mapCollision, engine.scene, tracerManager)
+  player = new PlayerController(engine.camera, mapCollision, engine.scene, tracerManager, engine.viewmodelCamera)
   player.setAgent(agent)
   player.position.copy(startPos)
   player.camera.position.copy(startPos)
@@ -98,6 +107,14 @@ async function startGame(agent, chosenWeaponId = 'vandal') {
   bots.setTracerManager(tracerManager)
   bots.spawn(BOT_COUNT, spawnPoints, player)
 
+  // Map Explorer & Debug Manager (Always available via F1 / F3, active by default in exploration mode)
+  mapExplorer = new MapExplorer(engine.scene, engine.camera, player, mapLoader, bots)
+  if (isExploration) {
+    mapExplorer.enable()
+  } else {
+    mapExplorer.disable()
+  }
+
   // HUD
   hud.setAgent(agent)
   hud.setWeaponSlot(0, player.weaponSlots[0]?.def)
@@ -107,9 +124,9 @@ async function startGame(agent, chosenWeaponId = 'vandal') {
 
   // Show unified deploy & loadout overlay on entry
   hud.showPlayOverlay({
-    title: 'READY TO DEPLOY',
-    subtitle: 'CHOOSE WEAPON & CLICK TO PLAY',
-    playText: 'CLICK TO PLAY',
+    title: isExploration ? 'MODE EKSPLORASI & DEBUG' : 'READY TO DEPLOY',
+    subtitle: isExploration ? 'TERBANG BEBAS [F] · INSPECT KOLISI [H] · TELEPORT [1-0]' : 'CHOOSE WEAPON & CLICK TO PLAY',
+    playText: isExploration ? 'MULAI EKSPLORASI' : 'CLICK TO PLAY',
     weaponId: chosenWeaponId
   })
 
@@ -129,10 +146,12 @@ async function startGame(agent, chosenWeaponId = 'vandal') {
 function gameLoop(dt) {
   if (!player || !bots) return
 
+  mapLoader.update(performance.now() * 0.001)
   tracerManager.update(dt)
   player.update(dt, bots.getAll())
   bots.update(dt, player.position, mapCollision, player.alive, player.velocity)
   dm.update()
+  mapExplorer?.update()
 }
 
 // ── Game Events ────────────────────────────────────────
@@ -151,10 +170,14 @@ function setupGameEvents() {
 
   gameEl.addEventListener('contextmenu', e => e.preventDefault())
 
+  let lastAttacker = 'BOT'
+  let lastAttackerHead = false
+
   // Bot damage with directional angle
   bus.on('player:take_damage', ({ amount, isHead, from, angle }) => {
+    lastAttacker = from ?? 'BOT'
+    lastAttackerHead = !!isHead
     player?.takeDamage(amount)
-    hud.addKillFeed(from ?? 'BOT', 'YOU', '', isHead)
     if (angle !== undefined) {
       hud.flashDirectionalDamage(angle, engine.camera.rotation.y)
     }
@@ -176,6 +199,7 @@ function setupGameEvents() {
 
   // Player died → unlock pointer so user can click weapon loadout and click to respawn
   bus.on('player:died', () => {
+    hud.addKillFeed(lastAttacker, 'YOU', '', lastAttackerHead)
     engine.unlockPointer()
   })
 
@@ -208,19 +232,59 @@ function setupGameEvents() {
     }
   }
 
-  // Screenshot button click
+  function triggerRecordClip() {
+    const indicator = document.getElementById('record-indicator')
+    const countdownEl = document.getElementById('rec-countdown')
+
+    const ok = engine?.recordClip(3000, (remaining) => {
+      if (countdownEl) {
+        countdownEl.textContent = `${remaining.toFixed(1)}s`
+      }
+    })
+
+    if (ok) {
+      if (indicator) {
+        indicator.classList.remove('hidden')
+        if (countdownEl) countdownEl.textContent = '3.0s'
+      }
+    }
+  }
+
+  bus.on('record:completed', ({ ext = 'mp4' } = {}) => {
+    const indicator = document.getElementById('record-indicator')
+    if (indicator) indicator.classList.add('hidden')
+    const toast = document.getElementById('record-toast')
+    if (toast) {
+      toast.textContent = `🎥 3s Clip (${ext.toUpperCase()}) Saved & Ready to Upload!`
+      toast.classList.remove('hidden')
+      clearTimeout(toast._timer)
+      toast._timer = setTimeout(() => toast.classList.add('hidden'), 2800)
+    }
+  })
+
+  // Screenshot & Record button clicks
   document.getElementById('btn-screenshot')?.addEventListener('click', (e) => {
     e.stopPropagation()
     triggerScreenshot()
+  })
+
+  document.getElementById('btn-record')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    triggerRecordClip()
   })
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Tab') {
       e.preventDefault()
     }
-    // Screenshot shortcut: P or F2 or PrintScreen
+    // Screenshot shortcut: P, F2, or PrintScreen
     if (e.code === 'KeyP' || e.code === 'F2' || e.code === 'PrintScreen') {
       triggerScreenshot()
+    }
+    // Record 3-second clip shortcut: F9 or Backslash (\) or BracketRight (])
+    // Far on the right side of the keyboard, completely away from WASD/Space gaming keys
+    if (e.code === 'F9' || e.code === 'Backslash' || e.code === 'BracketRight') {
+      triggerRecordClip()
     }
   })
 }

@@ -26,6 +26,16 @@ export class HUD {
     this.elDmgIndicator   = document.getElementById('damage-indicator')
     this.elSpawnShield    = document.getElementById('spawn-shield-badge')
 
+    // Valorant Kill Banner & Multi-Kill HUD
+    this.elKillBanner     = document.getElementById('kill-banner')
+    this.elKbBadge        = document.getElementById('kb-streak-badge')
+    this.elKbVictim       = document.getElementById('kb-victim')
+    this.elKbStars        = document.getElementById('kb-stars')
+    this.elKillVig        = document.getElementById('kill-vignette')
+    this.killStreak       = 0
+    this.lastKillTime     = 0
+    this.killBannerTimer  = null
+
     // Unified Play & Loadout Overlay
     this.elPlayOverlay    = document.getElementById('play-overlay')
     this.elPoTitle        = document.getElementById('po-title')
@@ -145,11 +155,11 @@ export class HUD {
       this.setKills(kills, goal)
     })
 
-    bus.on('dm:kill', ({ killer, victim, kills, goal }) => {
-      this.addKillFeed(killer, victim)
+    bus.on('dm:kill', ({ killer, victim, kills, goal, isHead }) => {
+      this.addKillFeed(killer, victim, '', isHead)
       this.setKills(kills, goal)
       if (killer === 'YOU') {
-        sounds.playKill()
+        this.triggerKillBanner(victim, isHead)
       }
     })
 
@@ -250,6 +260,67 @@ export class HUD {
     while (this.killFeedEl.children.length > 5) {
       this.killFeedEl.lastChild.remove()
     }
+  }
+
+  triggerKillBanner(victim, isHead = false) {
+    if (!this.elKillBanner) return
+
+    const now = performance.now()
+    if (now - this.lastKillTime < 6000) {
+      this.killStreak++
+    } else {
+      this.killStreak = 1
+    }
+    this.lastKillTime = now
+
+    // Play synthesized kill audio with escalating musical chords
+    sounds.playKill(this.killStreak, isHead)
+
+    // Set badge text based on streak and headshot status
+    let badgeText = isHead ? 'HEADSHOT' : 'ELIMINATED'
+    if (this.killStreak === 2) badgeText = 'DOUBLE KILL'
+    else if (this.killStreak === 3) badgeText = 'TRIPLE KILL'
+    else if (this.killStreak === 4) badgeText = 'QUADRA KILL'
+    else if (this.killStreak >= 5) badgeText = 'ACE!'
+
+    if (this.elKbBadge) {
+      this.elKbBadge.textContent = badgeText
+    }
+
+    if (this.elKbVictim) {
+      this.elKbVictim.textContent = victim.toUpperCase()
+    }
+
+    // Light up diamond stars according to multi-kill streak
+    if (this.elKbStars) {
+      const stars = this.elKbStars.children
+      for (let i = 0; i < stars.length; i++) {
+        stars[i].classList.toggle('active', i < Math.min(this.killStreak, 5))
+      }
+    }
+
+    // Apply animation & theme classes
+    this.elKillBanner.classList.remove('hidden', 'slam', 'headshot', 'ace')
+    if (isHead) this.elKillBanner.classList.add('headshot')
+    if (this.killStreak >= 5) this.elKillBanner.classList.add('ace')
+    void this.elKillBanner.offsetWidth // Force reflow to trigger CSS slam keyframe
+    this.elKillBanner.classList.add('slam')
+
+    // Screen edge flash vignette
+    if (this.elKillVig) {
+      this.elKillVig.className = 'kill-vignette'
+      void this.elKillVig.offsetWidth
+      this.elKillVig.classList.add(isHead ? 'flash-headshot' : 'flash')
+    }
+
+    // Auto-hide after 2.6s
+    if (this.killBannerTimer) clearTimeout(this.killBannerTimer)
+    this.killBannerTimer = setTimeout(() => {
+      if (this.elKillBanner) {
+        this.elKillBanner.classList.add('hidden')
+        this.elKillBanner.classList.remove('slam')
+      }
+    }, 2600)
   }
 
   flashHitIndicator(isHead) {

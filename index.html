@@ -20,7 +20,8 @@
         </div>
         <div class="logo-tagline">TACTICAL BROWSER FPS</div>
         <div class="menu-buttons">
-          <button class="val-btn primary" id="btn-play">PLAY</button>
+          <button class="val-btn primary" id="btn-play">PLAY DEATHMATCH</button>
+          <button class="val-btn secondary" id="btn-explore" style="border-color:#00f0ff;color:#00f0ff;box-shadow:0 0 14px rgba(0,240,255,0.25)">🛠️ EKSPLORASI MAP (DEBUG)</button>
           <button class="val-btn secondary" id="btn-leaderboard">LEADERBOARD</button>
           <button class="val-btn secondary" id="btn-settings">SETTINGS</button>
         </div>
@@ -96,11 +97,21 @@
         </div>
         <div class="hud-actions">
           <button class="hud-icon-btn" id="btn-screenshot" title="Take Screenshot (Press P or F2)">📸</button>
+          <button class="hud-icon-btn" id="btn-record" title="Record 3s Clip (Press F9 or \)">🎥</button>
         </div>
+      </div>
+
+      <!-- Live 3-Second Recording HUD Indicator -->
+      <div id="record-indicator" class="record-indicator hidden">
+        <div class="rec-dot"></div>
+        <span class="rec-text">REC</span>
+        <span id="rec-countdown" class="rec-countdown">3.0s</span>
       </div>
 
       <!-- Screenshot Notification Toast -->
       <div id="screenshot-toast" class="screenshot-toast hidden">📸 Screenshot Saved!</div>
+      <!-- Record Notification Toast -->
+      <div id="record-toast" class="screenshot-toast hidden" style="border-color: #ff4655; color: #ff4655; box-shadow: 0 0 20px rgba(255, 70, 85, 0.45);">🎥 3s Clip Saved & Downloaded!</div>
 
       <!-- Kill Feed -->
       <div id="kill-feed"></div>
@@ -136,6 +147,38 @@
       <div id="hit-indicator"></div>
       <!-- Damage vignette -->
       <div id="damage-vignette"></div>
+
+      <!-- Valorant Dopamine Kill Banner & Multi-Kill HUD -->
+      <div id="kill-banner" class="kill-banner hidden">
+        <div class="kb-streak-badge" id="kb-streak-badge">HEADSHOT</div>
+        <div class="kb-skull-wrap">
+          <div class="kb-wings kb-wing-left"></div>
+          <div class="kb-skull" id="kb-skull">
+            <svg viewBox="0 0 100 100" class="kb-skull-svg">
+              <path class="skull-bone" d="M25,35 C25,18 36,8 50,8 C64,8 75,18 75,35 C75,48 70,55 68,62 L64,62 L64,74 L58,74 L58,62 L42,62 L42,74 L36,74 L36,62 L32,62 C30,55 25,48 25,35 Z" />
+              <ellipse class="skull-eye" cx="39" cy="38" rx="7" ry="9" />
+              <ellipse class="skull-eye" cx="61" cy="38" rx="7" ry="9" />
+              <polygon class="skull-nose" points="50,47 46,55 54,55" />
+              <line class="skull-teeth" x1="45" y1="62" x2="45" y2="70" />
+              <line class="skull-teeth" x1="50" y1="62" x2="50" y2="70" />
+              <line class="skull-teeth" x1="55" y1="62" x2="55" y2="70" />
+            </svg>
+          </div>
+          <div class="kb-wings kb-wing-right"></div>
+        </div>
+        <div class="kb-stars" id="kb-stars">
+          <span class="kb-star">◆</span>
+          <span class="kb-star">◆</span>
+          <span class="kb-star">◆</span>
+          <span class="kb-star">◆</span>
+          <span class="kb-star">◆</span>
+        </div>
+        <div class="kb-victim" id="kb-victim">BOT PHOENIX</div>
+      </div>
+
+      <!-- Golden / Red Kill Edge Flash Vignette -->
+      <div id="kill-vignette" class="kill-vignette"></div>
+
       <!-- Unified Play & Loadout Overlay (Used on game start, death, and pause) -->
       <div id="play-overlay" class="hidden">
         <div class="po-content">

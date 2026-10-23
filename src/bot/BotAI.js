@@ -62,17 +62,25 @@ export class BotAI {
     this.jumpCooldown   = 2.5 + Math.random() * 3.0
     this.verticalVel    = 0
     this.isJumping      = false
+    this.botLandDip     = 0
 
     // Model references
     this.mesh       = null
     this.hitboxes   = []
     this.legL       = null
     this.legR       = null
+    this.kneeL      = null
+    this.kneeR      = null
     this.armL       = null
     this.armR       = null
     this.torso      = null
     this.headGroup  = null
+    this.gunGroup   = null
     this.healthBar  = null
+    this.recoilKick = 0
+    this.isHeadshotDeath = false
+    this.isFrozen = false
+    this.isPassive = false
 
     this._buildModel()
   }
@@ -80,38 +88,54 @@ export class BotAI {
   _buildModel() {
     const model = AgentModelBuilder.build(this.agent, this.weaponDef)
     this.mesh      = model.root
-    this.hitboxes  = model.hitboxes
+    this.hitboxes  = model.hitboxes || []
+    for (const hb of this.hitboxes) {
+      hb.userData.bot = this
+    }
     this.legL      = model.legL
     this.legR      = model.legR
+    this.kneeL     = model.kneeL
+    this.kneeR     = model.kneeR
     this.armL      = model.armL
     this.armR      = model.armR
     this.torso     = model.torso
     this.headGroup = model.headGroup
+    this.gunGroup  = model.gunGroup
 
-    // Health bar container with dark border above head
+    // Disable raycasting on cosmetic gun group
+    if (this.gunGroup) {
+      this.gunGroup.traverse(child => {
+        child.raycast = () => {}
+      })
+    }
+
+    // Health bar container with dark border above head (Disabled from raycasting)
     const hbBgGeo = new THREE.PlaneGeometry(1.04, 0.14)
     const hbBgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.85, depthTest: false })
     const hbBg = new THREE.Mesh(hbBgGeo, hbBgMat)
-    hbBg.position.y = 2.25
+    hbBg.position.y = 1.15
     hbBg.rotation.x = -0.3
+    hbBg.raycast = () => {}
     this.mesh.add(hbBg)
 
     const hbGeo = new THREE.PlaneGeometry(1, 0.1)
     const hbMat = new THREE.MeshBasicMaterial({ color: 0x00ff87, transparent: true, opacity: 0.95, depthTest: false })
     this.healthBar = new THREE.Mesh(hbGeo, hbMat)
-    this.healthBar.position.set(0, 2.25, 0.01)
+    this.healthBar.position.set(0, 1.15, 0.01)
     this.healthBar.rotation.x = -0.3
+    this.healthBar.raycast = () => {}
     this.mesh.add(this.healthBar)
 
-    // Floating Valorant Enemy Indicator Diamond
+    // Floating Valorant Enemy Indicator Diamond (Disabled from raycasting)
     const diaGeo = new THREE.ConeGeometry(0.11, 0.18, 4)
     diaGeo.rotateX(Math.PI) // point downwards toward head
     const diaMat = new THREE.MeshBasicMaterial({ color: 0xff3b52, depthTest: false })
     const diaMesh = new THREE.Mesh(diaGeo, diaMat)
-    diaMesh.position.y = 2.46
+    diaMesh.position.y = 1.28
+    diaMesh.raycast = () => {}
     this.mesh.add(diaMesh)
 
-    // Soft ambient occlusion contact shadow disc on the ground directly beneath feet
+    // Soft ambient occlusion contact shadow disc on the ground directly beneath feet (Disabled from raycasting)
     const shadowGeo = new THREE.PlaneGeometry(0.95, 0.95)
     const shadowMat = new THREE.MeshBasicMaterial({
       map: createContactShadowTexture(),
@@ -122,6 +146,7 @@ export class BotAI {
     const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat)
     shadowMesh.rotation.x = -Math.PI / 2
     shadowMesh.position.y = -0.895 // Exactly at ground level (y=0) when root is at y=0.9
+    shadowMesh.raycast = () => {}
     this.mesh.add(shadowMesh)
 
     this.mesh.position.copy(this.position)
@@ -138,13 +163,44 @@ export class BotAI {
   }
 
   update(dt, playerPosition, mapCollision, isPlayerAlive, playerVelocity, allBots = []) {
+    if (this.isFrozen) {
+      if (this.mesh) this.mesh.position.copy(this.position)
+      this._updateHealthBar()
+      return
+    }
+
     if (this.isDead) {
       if (this.deathFallTimer > 0) {
         this.deathFallTimer -= dt
-        // Snappy, instant combat knockdown onto ground
-        if (this.mesh) {
-          this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, -Math.PI / 2, dt * 20)
-          this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, this.spawnPos.y - 0.45, dt * 20)
+        if (this.isHeadshotDeath) {
+          // Dynamic Headshot Crumple: Head snaps back violently, knees buckle, body collapses
+          if (this.headGroup) this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, -0.95, dt * 18)
+          if (this.torso) {
+            this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, -0.45, dt * 15)
+            this.torso.rotation.y = THREE.MathUtils.lerp(this.torso.rotation.y, 0.35, dt * 12)
+          }
+          if (this.kneeL) this.kneeL.rotation.x = THREE.MathUtils.lerp(this.kneeL.rotation.x, 1.45, dt * 15)
+          if (this.kneeR) this.kneeR.rotation.x = THREE.MathUtils.lerp(this.kneeR.rotation.x, 1.30, dt * 15)
+          if (this.legL) this.legL.rotation.x = THREE.MathUtils.lerp(this.legL.rotation.x, -0.6, dt * 15)
+          if (this.legR) this.legR.rotation.x = THREE.MathUtils.lerp(this.legR.rotation.x, -0.4, dt * 15)
+          if (this.armL) this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, 0.4, dt * 12)
+          if (this.armR) this.armR.rotation.x = THREE.MathUtils.lerp(this.armR.rotation.x, 0.6, dt * 12)
+          if (this.mesh) {
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, this.spawnPos.y - 0.70, dt * 14)
+            this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, -0.65, dt * 10)
+          }
+        } else {
+          // Dynamic Body Shot Knockdown: Torso folds forward, knees collapse, falls to floor
+          if (this.torso) this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, 0.85, dt * 16)
+          if (this.headGroup) this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, 0.55, dt * 16)
+          if (this.kneeL) this.kneeL.rotation.x = THREE.MathUtils.lerp(this.kneeL.rotation.x, 1.35, dt * 15)
+          if (this.kneeR) this.kneeR.rotation.x = THREE.MathUtils.lerp(this.kneeR.rotation.x, 1.20, dt * 15)
+          if (this.armL) this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, -0.2, dt * 10)
+          if (this.armR) this.armR.rotation.x = THREE.MathUtils.lerp(this.armR.rotation.x, -0.1, dt * 10)
+          if (this.mesh) {
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, this.spawnPos.y - 0.72, dt * 14)
+            this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, 0.85, dt * 10)
+          }
         }
       }
       return
@@ -259,6 +315,10 @@ export class BotAI {
     while (diff > Math.PI)  diff -= Math.PI * 2
     this.rotation += diff * Math.min(1, dt * 14)
 
+    // Smooth combat banking lean into turns
+    const targetBanking = -diff * 0.18
+    this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, targetBanking, dt * 10)
+
     // ── 3b. Natural Bot Jump & Vertical Physics ──
     this.jumpTimer += dt
     if (this.jumpTimer > this.jumpCooldown && (this.state === STATE.CHASE || this.state === STATE.SHOOT) && !this.isJumping) {
@@ -277,6 +337,7 @@ export class BotAI {
         this.position.y = this.spawnPos.y
         this.verticalVel = 0
         this.isJumping = false
+        this.botLandDip = 0.08
       }
     } else {
       this.position.y = this.spawnPos.y
@@ -285,9 +346,9 @@ export class BotAI {
     this.mesh.position.copy(this.position)
     this.mesh.rotation.y = this.rotation
 
-    // Pitch head & gun toward target height
+    // Pitch head toward target height
     if (bestTarget && (this.headGroup || this.torso)) {
-      const dy = (bestTarget.position.y + 0.8) - (this.position.y + 1.2)
+      const dy = (bestTarget.position.y + 0.72) - (this.position.y + 0.84)
       const distFlat = Math.hypot(bestTarget.position.x - this.position.x, bestTarget.position.z - this.position.z)
       const pitch = -Math.atan2(dy, Math.max(0.1, distFlat))
       if (this.headGroup) this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, pitch * 0.7, dt * 10)
@@ -303,10 +364,10 @@ export class BotAI {
 
   _hasLineOfSight(targetPos, mapCollision) {
     const eyePos = this.position.clone()
-    eyePos.y += 1.48
+    eyePos.y += 0.84
 
     const targetEye = targetPos.clone()
-    targetEye.y += 0.75
+    targetEye.y += 0.72
 
     const dir = new THREE.Vector3().subVectors(targetEye, eyePos)
     const totalDist = dir.length()
@@ -317,52 +378,110 @@ export class BotAI {
   }
 
   _animateBot(dt) {
-    this.animTime += dt * (this.isMoving ? 11 : 2.5)
+    this.animTime += dt * (this.isMoving ? 11.5 : 2.5)
 
     // Damage flinch recovery
     if (this.flinchTimer > 0) {
       this.flinchTimer -= dt
     }
 
-    if (this.isJumping) {
-      // Natural aerial tuck: knees pulled slightly forward, arms braced
-      if (this.legL) this.legL.rotation.x = THREE.MathUtils.lerp(this.legL.rotation.x, -0.45, dt * 14)
-      if (this.legR) this.legR.rotation.x = THREE.MathUtils.lerp(this.legR.rotation.x, -0.35, dt * 14)
-      if (this.armL) this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, -Math.PI / 3, dt * 12)
-      if (this.torso) this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, 0.15, dt * 10)
-    } else if (this.isMoving) {
-      // Natural walking stride with foot sweep
-      const legAngle = Math.sin(this.animTime) * 0.52
-      if (this.legL) this.legL.rotation.x = legAngle
-      if (this.legR) this.legR.rotation.x = -legAngle
+    // Recoil kick recovery
+    if (this.recoilKick > 0) {
+      this.recoilKick = THREE.MathUtils.lerp(this.recoilKick, 0, dt * 16)
+    }
 
-      // Torso bobbing & slight sprint sway
+    // Land impact spring recovery
+    if (this.botLandDip > 0) {
+      this.botLandDip = THREE.MathUtils.lerp(this.botLandDip, 0, dt * 14)
+      if (this.botLandDip < 0.001) this.botLandDip = 0
+    }
+
+    if (this.isJumping) {
+      // Natural aerial jump tuck: knees bent up, thighs slightly forward, arms braced
+      if (this.legL) this.legL.rotation.x = THREE.MathUtils.lerp(this.legL.rotation.x, -0.40, dt * 14)
+      if (this.legR) this.legR.rotation.x = THREE.MathUtils.lerp(this.legR.rotation.x, -0.32, dt * 14)
+      if (this.kneeL) this.kneeL.rotation.x = THREE.MathUtils.lerp(this.kneeL.rotation.x, 0.70, dt * 14)
+      if (this.kneeR) this.kneeR.rotation.x = THREE.MathUtils.lerp(this.kneeR.rotation.x, 0.60, dt * 14)
+      if (this.armL) this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, -Math.PI / 3, dt * 12)
+      if (this.armR) this.armR.rotation.x = THREE.MathUtils.lerp(this.armR.rotation.x, -Math.PI / 3, dt * 12)
       if (this.torso) {
-        this.torso.position.y = 0.55 + Math.abs(Math.sin(this.animTime)) * 0.06
-        this.torso.rotation.z = Math.sin(this.animTime * 0.5) * 0.05
-        this.torso.rotation.x = 0.08 // slight forward combat lean
+        this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, 0.12, dt * 10)
+        this.torso.rotation.z = THREE.MathUtils.lerp(this.torso.rotation.z, 0, dt * 10)
+      }
+    } else if (this.isMoving) {
+      // Fluid Biped Locomotion Cycle:
+      const strideL = Math.sin(this.animTime)
+      const strideR = Math.sin(this.animTime + Math.PI)
+
+      // Hip forward/back swing
+      if (this.legL) this.legL.rotation.x = strideL * 0.56
+      if (this.legR) this.legR.rotation.x = strideR * 0.56
+
+      // Knee flexion: natural bend on the recovery swing
+      const kneePhaseL = Math.sin(this.animTime - 0.4)
+      const kneePhaseR = Math.sin(this.animTime + Math.PI - 0.4)
+      if (this.kneeL) this.kneeL.rotation.x = Math.max(0.04, -kneePhaseL * 0.78)
+      if (this.kneeR) this.kneeR.rotation.x = Math.max(0.04, -kneePhaseR * 0.78)
+
+      // Torso bobbing & hip sway
+      if (this.torso) {
+        // Vertical step bounce (two bounces per full gait cycle) minus land impact
+        this.torso.position.y = (Math.abs(Math.sin(this.animTime)) * 0.035) - this.botLandDip
+        // Pelvic sway opposite to stepping foot
+        this.torso.rotation.z = Math.cos(this.animTime) * 0.035
+        // Combat forward lean
+        this.torso.rotation.x = 0.07
+        // Slight torso twist
+        this.torso.rotation.y = -strideL * 0.06
       }
 
-      // Arms swing while keeping gun pointed forward
-      if (this.armL) this.armL.rotation.x = -Math.PI / 4 + legAngle * 0.28
-      if (this.armR) this.armR.rotation.x = -Math.PI / 4 - legAngle * 0.18
+      // Arms swing naturally while holding weapon
+      if (this.armL) this.armL.rotation.x = -Math.PI / 4 + strideL * 0.15
+      if (this.armR) this.armR.rotation.x = -Math.PI / 4 + strideR * 0.10
+
+      // Weapon slight sway with stride
+      if (this.gunGroup) {
+        this.gunGroup.position.y = (0.44 + Math.abs(Math.sin(this.animTime)) * 0.015) - this.botLandDip
+        this.gunGroup.rotation.z = Math.cos(this.animTime) * 0.025
+        this.gunGroup.rotation.x = -this.recoilKick
+      }
     } else {
       // Idle breathing posture
-      const breath = Math.sin(this.animTime) * 0.02
+      const breath = Math.sin(this.animTime) * 0.012
       if (this.legL) this.legL.rotation.x = THREE.MathUtils.lerp(this.legL.rotation.x, 0, dt * 10)
       if (this.legR) this.legR.rotation.x = THREE.MathUtils.lerp(this.legR.rotation.x, 0, dt * 10)
+      if (this.kneeL) this.kneeL.rotation.x = THREE.MathUtils.lerp(this.kneeL.rotation.x, 0.04, dt * 10)
+      if (this.kneeR) this.kneeR.rotation.x = THREE.MathUtils.lerp(this.kneeR.rotation.x, 0.04, dt * 10)
       if (this.armL) this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, -Math.PI / 4 + breath, dt * 10)
       if (this.armR) this.armR.rotation.x = THREE.MathUtils.lerp(this.armR.rotation.x, -Math.PI / 4 + breath, dt * 10)
       if (this.torso) {
-        this.torso.position.y = THREE.MathUtils.lerp(this.torso.position.y, 0.55 + breath, dt * 8)
+        this.torso.position.y = THREE.MathUtils.lerp(this.torso.position.y, breath - this.botLandDip, dt * 8)
         this.torso.rotation.z = THREE.MathUtils.lerp(this.torso.rotation.z, 0, dt * 10)
         this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, 0, dt * 10)
+        this.torso.rotation.y = THREE.MathUtils.lerp(this.torso.rotation.y, 0, dt * 10)
+      }
+      if (this.gunGroup) {
+        this.gunGroup.position.y = THREE.MathUtils.lerp(this.gunGroup.position.y, 0.44 - this.botLandDip, dt * 8)
+        this.gunGroup.rotation.z = THREE.MathUtils.lerp(this.gunGroup.rotation.z, 0, dt * 10)
+        this.gunGroup.rotation.x = -this.recoilKick
       }
     }
 
     // Apply flinch jerk if recently hit
     if (this.flinchTimer > 0 && this.torso) {
       this.torso.rotation.x = -0.15 * (this.flinchTimer / 0.18)
+    }
+
+    // Tactical reload posture when changing magazines
+    if (this.isReloading) {
+      if (this.gunGroup) {
+        this.gunGroup.position.y = THREE.MathUtils.lerp(this.gunGroup.position.y, 0.48, dt * 10)
+        this.gunGroup.rotation.x = THREE.MathUtils.lerp(this.gunGroup.rotation.x, 0.28, dt * 10)
+      }
+      if (this.armL) {
+        this.armL.rotation.x = THREE.MathUtils.lerp(this.armL.rotation.x, -0.15, dt * 10)
+        this.armL.rotation.y = THREE.MathUtils.lerp(this.armL.rotation.y, 0.35, dt * 10)
+      }
     }
   }
 
@@ -448,6 +567,7 @@ export class BotAI {
   }
 
   _tryShootTarget(targetInfo, now) {
+    if (this.isPassive || this.isFrozen) return
     if (this.isReloading) return
     if (this.ammo <= 0) { this._reload(); return }
 
@@ -461,6 +581,7 @@ export class BotAI {
 
     this.lastFire = now
     this.ammo--
+    this.recoilKick = 0.16
 
     const muzzlePos = this.position.clone()
     muzzlePos.y += 0.85
@@ -546,8 +667,9 @@ export class BotAI {
   _die(attackerName = null, isHead = false) {
     if (this.isDead) return
     this.isDead = true
+    this.isHeadshotDeath = !!isHead
     this.deathTime = performance.now()
-    this.deathFallTimer = 0.45
+    this.deathFallTimer = 0.65
     this.state = STATE.DEAD
 
     // Emit event with attacker info (if killer was another bot or player)
@@ -563,11 +685,11 @@ export class BotAI {
     bus.emit('bot:died', { botId: this.id, botName: this.name, killer: attackerName, isHead })
     setTimeout(() => {
       if (this.mesh) this.mesh.visible = false
-    }, 180)
+    }, 650)
 
     setTimeout(() => {
       if (this.isDead) this._respawn()
-    }, 900)
+    }, 1200)
   }
 
   _respawn() {
@@ -589,6 +711,7 @@ export class BotAI {
     this._pickWanderTarget()
     this.health      = this.maxHealth
     this.isDead      = false
+    this.isHeadshotDeath = false
     this.deathTime   = 0
     this.state       = STATE.WANDER
     this.ammo        = this.weaponDef.magazineSize
@@ -597,6 +720,25 @@ export class BotAI {
     this.mesh.visible = true
     this.deathFallTimer = 0
     this.flinchTimer = 0
+    this.recoilKick = 0
+
+    // Reset joint positions and rotations to natural ready pose
+    if (this.headGroup) this.headGroup.rotation.set(0, 0, 0)
+    if (this.torso) {
+      this.torso.rotation.set(0, 0, 0)
+      this.torso.position.set(0, 0, 0)
+    }
+    if (this.kneeL) this.kneeL.rotation.set(0.04, 0, 0)
+    if (this.kneeR) this.kneeR.rotation.set(0.04, 0, 0)
+    if (this.legL) this.legL.rotation.set(0, 0, 0)
+    if (this.legR) this.legR.rotation.set(0, 0, 0)
+    if (this.armL) this.armL.rotation.set(-Math.PI / 4, 0, Math.PI / 12)
+    if (this.armR) this.armR.rotation.set(-Math.PI / 4, 0, -Math.PI / 12)
+    if (this.gunGroup) {
+      this.gunGroup.position.set(0.18, 0.44, 0.34)
+      this.gunGroup.rotation.set(0, 0, 0)
+    }
+
     this._updateHealthBar()
     bus.emit('bot:respawned', { botId: this.id })
   }
