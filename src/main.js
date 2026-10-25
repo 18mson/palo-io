@@ -351,12 +351,35 @@ window.setCameraPreset = (name) => {
   return true
 }
 
+window.setCheckpoint = (id) => {
+  if (!debugTools || !player || !engine) return false
+  const ok = debugTools.teleportToCheckpoint(id)
+  if (ok) {
+    document.getElementById('play-overlay')?.classList.add('hidden')
+    document.getElementById('end-screen')?.classList.remove('active')
+    document.getElementById('main-menu')?.classList.remove('active')
+    hud?.show()
+    player.alive = true
+  }
+  return ok
+}
+
 const params = new URLSearchParams(window.location.search)
 const viewPreset = params.get('view') || params.get('preset')
+const checkpointParam = params.get('checkpoint') || params.get('cp')
 const autoPlay = params.get('play') || params.get('autostart')
 const showTactical = params.get('tactical') === '1'
 
-if (viewPreset && CAMERA_PRESETS[viewPreset]) {
+if (checkpointParam) {
+  if (window.history?.replaceState) {
+    window.history.replaceState({}, '', window.location.pathname)
+  }
+  startGame(AGENT_LIST[0], 'vandal', false).then(() => {
+    document.getElementById('main-menu')?.classList.remove('active')
+    document.getElementById('play-overlay')?.classList.add('hidden')
+    window.setCheckpoint(checkpointParam)
+  })
+} else if (viewPreset && CAMERA_PRESETS[viewPreset]) {
   if (window.history?.replaceState) {
     window.history.replaceState({}, '', window.location.pathname)
   }

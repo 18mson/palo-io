@@ -41,8 +41,8 @@ export class GameEngine {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 1.10
-    this.renderer.setClearColor(0x70b2fa, 1.0)
+    this.renderer.toneMappingExposure = 1.0
+    this.renderer.setClearColor(0x8fa4b8, 1.0)
     this.renderer.info.autoReset = false
     this.scene.background = new THREE.Color(0x70b2fa)
 

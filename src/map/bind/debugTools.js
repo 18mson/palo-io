@@ -838,20 +838,27 @@ export class BindDebugTools {
         </div>
         <div class="bind-cp-desc">Eye: ${cp.eyeHeight}m | Yaw: ${cp.yaw}° • ${cp.desc}</div>
       `
-      btn.addEventListener('click', () => {
-        const player = this.getPlayer?.()
-        if (!player) return
-        const feetY = cp.eyeHeight - 0.72
-        player.teleportTo(cp.pos[0], feetY, cp.pos[2])
-        if (player.camera) {
-          player.camera.rotation.order = 'YXZ'
-          player.camera.rotation.set(0, -THREE.MathUtils.degToRad(cp.yaw), 0)
-        }
-        this.engine.setOverrideCamera(null)
-        this.showToast(`Teleported to ${cp.id} (${cp.name}) - Yaw ${cp.yaw}°`)
-      })
+      btn.addEventListener('click', () => this.teleportToCheckpoint(cp))
       listEl.appendChild(btn)
     }
+  }
+
+  teleportToCheckpoint(cpIdOrObj) {
+    const cp = typeof cpIdOrObj === 'string'
+      ? CAMERA_CHECKPOINTS.find(c => c.id === cpIdOrObj)
+      : cpIdOrObj
+    if (!cp) return false
+    const player = this.getPlayer?.()
+    if (!player) return false
+    const feetY = cp.eyeHeight - 0.72
+    player.teleportTo(cp.pos[0], feetY, cp.pos[2])
+    if (player.camera) {
+      player.camera.rotation.order = 'YXZ'
+      player.camera.rotation.set(0, -THREE.MathUtils.degToRad(cp.yaw), 0)
+    }
+    this.engine.setOverrideCamera(null)
+    this.showToast(`Teleported to ${cp.id} (${cp.name}) - Yaw ${cp.yaw}°`)
+    return true
   }
 
   // ── F7: Collision Boxes Wireframe ─────────────────────────────────────────

@@ -13,27 +13,37 @@ export function createBindMap(scene) {
   const rootGroup = new THREE.Group()
   rootGroup.name = 'bind-map-root'
 
-  // 1. Environment & Lighting
-  scene.background = new THREE.Color(0x92a3b5)
-  scene.fog = new THREE.Fog(0x92a3b5, 60, 180)
+  // 1. Environment & Lighting (docs/map/BIND_BLUEPRINT.md §8)
+  const skyColor = new THREE.Color(0x8fa4b8)
+  scene.background = skyColor
+  scene.fog = new THREE.Fog(0x8fa4b8, 60, 180)
 
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444d56, 0.75)
+  // Hemisphere 0.6: Sky 0xe8f0f8, Ground 0x4a443b
+  const hemiLight = new THREE.HemisphereLight(0xe8f0f8, 0x4a443b, 0.6)
   hemiLight.position.set(0, 50, 0)
   rootGroup.add(hemiLight)
 
-  const sun = new THREE.DirectionalLight(0xffffff, 1.1)
-  sun.position.set(30, 60, 20)
+  // Sun: DirectionalLight 1.1 from (-0.4, -1, -0.3) -> source offset (+32, 80, +24)
+  const sun = new THREE.DirectionalLight(0xfffaf0, 1.1)
+  sun.position.set(32, 80, 24)
   sun.castShadow = true
   sun.shadow.mapSize.width = 2048
   sun.shadow.mapSize.height = 2048
-  sun.shadow.camera.near = 0.5
-  sun.shadow.camera.far = 180
-  sun.shadow.camera.left = -70
-  sun.shadow.camera.right = 70
-  sun.shadow.camera.top = 70
-  sun.shadow.camera.bottom = -70
-  sun.shadow.bias = -0.0005
+  sun.shadow.camera.near = 10
+  sun.shadow.camera.far = 160
+  // Shadows limited to a 40 m radius around player
+  sun.shadow.camera.left = -40
+  sun.shadow.camera.right = 40
+  sun.shadow.camera.top = 40
+  sun.shadow.camera.bottom = -40
+  sun.shadow.bias = -0.0004
   rootGroup.add(sun)
+  rootGroup.add(sun.target)
+
+  // Fill Light 0.3: Soft cool ambient directional fill from opposite side
+  const fillLight = new THREE.DirectionalLight(0xb8cce0, 0.3)
+  fillLight.position.set(-32, 50, -24)
+  rootGroup.add(fillLight)
 
   // 2. Geometry & Mesh Building
   const boxes = buildMapBoxes(bindLayout)
@@ -111,6 +121,12 @@ export function createBindMap(scene) {
     },
     update(time, focusPos, player, bots) {
       teleporters.update(time, player, bots)
+      const center = focusPos || player?.position
+      if (center) {
+        sun.target.position.set(center.x, 0, center.z)
+        sun.position.set(center.x + 32, 80, center.z + 24)
+        sun.target.updateMatrixWorld()
+      }
     },
     destroy() {
       scene.remove(rootGroup)
