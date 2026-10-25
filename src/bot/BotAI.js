@@ -497,7 +497,7 @@ export class BotAI {
       const res = mapCollision.resolve(this.position, disp, 0.45, 0.9)
       this.position.copy(res.position)
       // If hit wall while wandering, pick a new path
-      if (this.state === STATE.WANDER && res.displacement.x === 0 && res.displacement.z === 0) {
+      if (this.state === STATE.WANDER && (res.collidedX || res.collidedZ || (res.displacement && res.displacement.x === 0 && res.displacement.z === 0))) {
         this._pickWanderTarget()
       }
     } else {

@@ -244,8 +244,10 @@ export class BindCollision {
     if (pos.z < minZ) { pos.z = minZ; collidedZ = true }
     if (pos.z > maxZ) { pos.z = maxZ; collidedZ = true }
 
+    const actualDisp = new THREE.Vector3().subVectors(pos, position)
     return {
       position: pos,
+      displacement: actualDisp,
       onGround,
       collidedX,
       collidedZ
