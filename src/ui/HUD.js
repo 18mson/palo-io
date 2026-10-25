@@ -71,6 +71,20 @@ export class HUD {
     }
   }
 
+  hide() {
+    const top = document.getElementById('hud-top')
+    const bottom = document.getElementById('hud-bottom')
+    if (top) top.style.display = 'none'
+    if (bottom) bottom.style.display = 'none'
+  }
+
+  show() {
+    const top = document.getElementById('hud-top')
+    const bottom = document.getElementById('hud-bottom')
+    if (top) top.style.display = ''
+    if (bottom) bottom.style.display = ''
+  }
+
   _setupListeners() {
     bus.on('player:damaged', ({ health, shield }) => {
       this.setHealth(health, shield)

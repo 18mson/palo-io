@@ -938,6 +938,33 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.explorer-header-row:active {
+  cursor: grabbing;
+}
+
+.drag-grip-icon {
+  display: inline-block;
+  font-size: 13px;
+  color: rgba(0, 240, 255, 0.5);
+  margin-right: 4px;
+  letter-spacing: -1px;
+  transition: color 0.15s;
+}
+
+.explorer-header-row:hover .drag-grip-icon {
+  color: #00f0ff;
+}
+
+.explorer-card.is-dragging {
+  cursor: grabbing !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(0, 240, 255, 0.35);
+  transform: scale(1.015);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .explorer-badge {
@@ -949,14 +976,36 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
 }
 
-.explorer-fps-badge {
+.explorer-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.explorer-stat-badge {
   font-size: 11px;
   font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+
+.explorer-fps-badge {
   color: #22c55e;
   background: rgba(34, 197, 94, 0.15);
-  padding: 2px 8px;
-  border-radius: 12px;
   border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.explorer-calls-badge {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.explorer-tris-badge {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .explorer-close-btn {
@@ -1223,3 +1272,613 @@ button { cursor: pointer; border: none; background: none; font-family: var(--fon
   line-height: 1.6;
 }
 .help-section b { color: #38bdf8; }
+
+/* ══════════════════════════════════════
+   TOP-DOWN BLUEPRINT & CALIBRATION OVERLAY
+══════════════════════════════════════ */
+.topdown-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1050;
+  font-family: var(--font-body);
+}
+
+.topdown-header-bar {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #00f0ff;
+  border-radius: 30px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.25);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.topdown-title-pill {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #00f0ff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topdown-coord-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.topdown-coord-val {
+  color: #facc15;
+}
+
+.topdown-grid-val {
+  color: #38bdf8;
+  font-size: 11px;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.topdown-zone-badge {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.topdown-exit-btn {
+  background: rgba(255, 70, 85, 0.2);
+  border: 1px solid rgba(255, 70, 85, 0.5);
+  color: #ff4655;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.topdown-exit-btn:hover {
+  background: #ff4655;
+  color: #fff;
+}
+
+/* Calibration Floating Panel */
+.topdown-calib-card {
+  position: absolute;
+  top: 70px;
+  left: 20px;
+  width: 330px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.15);
+  color: #fff;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calib-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+}
+.calib-header:active {
+  cursor: grabbing;
+}
+.topdown-calib-card.is-dragging {
+  cursor: grabbing !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(0, 240, 255, 0.4);
+  transform: scale(1.015);
+}
+
+.calib-title {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #00f0ff;
+}
+
+.calib-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.calib-label {
+  font-weight: 600;
+  color: #cbd5e1;
+  min-width: 90px;
+}
+
+.calib-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calib-btn-step {
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.calib-btn-step:hover {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: #00f0ff;
+}
+
+.calib-input {
+  width: 76px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+  color: #facc15;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 4px;
+}
+.calib-input:focus {
+  outline: none;
+  border-color: #00f0ff;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+
+.calib-slider {
+  flex: 1;
+  height: 6px;
+  accent-color: #00f0ff;
+  cursor: pointer;
+}
+
+.calib-val-badge {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00f0ff;
+  min-width: 38px;
+  text-align: right;
+}
+
+.calib-btn-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.calib-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+.calib-action-btn:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: #00f0ff;
+  color: #fff;
+}
+.calib-action-btn.active {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: #00f0ff;
+  color: #00f0ff;
+}
+
+/* Floating Mouse Cursor Tooltip */
+.topdown-cursor-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #00f0ff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #facc15;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  transform: translate(14px, 14px);
+  white-space: nowrap;
+  z-index: 1060;
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VALORANT TACTICAL MINIMAP & FULL TACTICAL MAP MODAL
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. HUD Minimap Radar ── */
+.minimap-hud {
+  position: absolute;
+  top: 56px;
+  left: 20px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+  user-select: none;
+  animation: minimapFadeIn 0.3s ease-out;
+}
+
+@keyframes minimapFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 200px;
+  padding: 0 2px;
+  cursor: grab;
+  user-select: none;
+}
+
+.minimap-header:active {
+  cursor: grabbing;
+}
+
+.minimap-hud.is-dragging {
+  cursor: grabbing !important;
+  transform: scale(1.02);
+  filter: drop-shadow(0 8px 24px rgba(0, 240, 255, 0.4));
+}
+
+.minimap-zone-badge {
+  background: rgba(11, 21, 32, 0.88);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: var(--font-head), 'Teko', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #00f0ff;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  max-width: 125px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(4px);
+}
+
+.minimap-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.minimap-btn {
+  background: rgba(11, 21, 32, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 3px;
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  width: 22px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  backdrop-filter: blur(4px);
+}
+
+.minimap-btn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: #00f0ff;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.minimap-btn:active {
+  transform: translateY(0);
+}
+
+.minimap-radar-frame {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), inset 0 0 20px rgba(0, 240, 255, 0.15);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  background: #09111a;
+  overflow: hidden;
+}
+
+.minimap-radar-frame:hover {
+  transform: scale(1.025);
+  box-shadow: 0 6px 28px rgba(0, 240, 255, 0.3), inset 0 0 25px rgba(0, 240, 255, 0.25);
+}
+
+#minimap-canvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+}
+
+/* ── 2. Full Tactical Map Modal Overlay ([M]) ── */
+.tactical-map-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  user-select: none;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.tactical-map-modal.hidden {
+  display: none !important;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to   { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+.tactical-map-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 9, 16, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.tactical-map-dialog {
+  position: relative;
+  z-index: 2;
+  width: 680px;
+  max-width: 95vw;
+  background: #09131d;
+  border: 1px solid #00f0ff;
+  border-radius: 6px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 35px rgba(0, 240, 255, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tactical-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: rgba(13, 24, 38, 0.95);
+  border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+  cursor: grab;
+  user-select: none;
+}
+
+.tactical-map-header:active {
+  cursor: grabbing;
+}
+
+.tactical-map-dialog.is-dragging {
+  cursor: grabbing !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 45px rgba(0, 240, 255, 0.4);
+}
+
+.tactical-map-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-tag {
+  background: var(--val-red, #ff4655);
+  color: #fff;
+  font-family: var(--font-head), 'Teko', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+.map-sub {
+  color: #f8fafc;
+  font-family: var(--font-head), 'Teko', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.tactical-map-location {
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tactical-map-location b {
+  color: #00f0ff;
+  letter-spacing: 1px;
+}
+
+.tactical-map-location .coords {
+  color: #facc15;
+  font-family: monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.tactical-map-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-tactical-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-tactical-close:hover {
+  background: #ff4655;
+  border-color: #ff4655;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+.tactical-map-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: radial-gradient(circle at center, #0d1a27 0%, #081119 100%);
+}
+
+#tactical-map-canvas {
+  width: 600px;
+  height: 600px;
+  max-width: 86vw;
+  max-height: 66vh;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.7);
+  cursor: crosshair;
+}
+
+.tactical-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 11px;
+  color: #94a3b8;
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-icon.player-icon {
+  color: #00f0ff;
+  font-size: 12px;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+}
+
+.legend-dot.bot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4655;
+  box-shadow: 0 0 6px #ff4655;
+}
+
+.legend-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.legend-badge.site-a {
+  background: #083344;
+  border: 1px solid #06b6d4;
+  color: #06b6d4;
+}
+
+.legend-badge.site-b {
+  background: #451a03;
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+}
+
+.legend-hint {
+  color: #64748b;
+  font-size: 10.5px;
+  width: 100%;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.legend-hint b {
+  color: #00f0ff;
+}
+

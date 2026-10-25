@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 /**
  * WeaponModelLoader — Loads custom external 3D weapon models (.glb / .gltf)
@@ -9,12 +10,33 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
  *  - Seamless fallback to high-detail procedural Valorant models when no custom GLB is loaded
  */
 const TARGET_LENGTHS = {
-  vandal: 0.85,
+  vandal: 0.86,
   spectre: 0.62,
-  operator: 1.25,
+  operator: 1.30,
   odin: 1.05,
   bucky: 0.88,
   classic: 0.28
+}
+
+const WEAPON_CONFIGS = {
+  vandal: {
+    offset: new THREE.Vector3(0, -0.01, -0.03)
+  },
+  operator: {
+    offset: new THREE.Vector3(0, 0.02, -0.13)
+  },
+  spectre: {
+    offset: new THREE.Vector3(0, 0.02, 0.03)
+  },
+  classic: {
+    offset: new THREE.Vector3(0, 0.02, -0.02)
+  },
+  bucky: {
+    offset: new THREE.Vector3(0, 0.02, 0.05)
+  },
+  odin: {
+    offset: new THREE.Vector3(0, 0.02, 0.07)
+  }
 }
 
 export class WeaponModelLoader {
@@ -31,7 +53,7 @@ export class WeaponModelLoader {
    */
   async loadModel(weaponId) {
     if (this.modelCache.has(weaponId)) {
-      return this.modelCache.get(weaponId).clone()
+      return SkeletonUtils.clone(this.modelCache.get(weaponId))
     }
 
     if (this.checkCache.get(weaponId) === false) {
@@ -49,42 +71,92 @@ export class WeaponModelLoader {
       }
 
       const gltf = await this._loadGLTF(url)
-      const scene = gltf.scene
+      const normalizedGroup = this._normalizeScene(gltf.scene, weaponId)
 
-      // Automatically measure bounding box and normalize scale to match Valorant FPS proportions
-      const box = new THREE.Box3().setFromObject(scene)
-      const size = new THREE.Vector3()
-      box.getSize(size)
-      const maxDim = Math.max(size.x, size.y, size.z)
-      const target = TARGET_LENGTHS[weaponId] || 0.80
-
-      if (maxDim > 0.001) {
-        // Automatically scales models regardless of whether exported in cm, mm, or meters
-        const scaleFactor = target / maxDim
-        scene.scale.setScalar(scaleFactor)
-      }
-
-      // Optimize materials and textures for crisp first-person viewmodel rendering
-      scene.traverse(child => {
-        if (child.isMesh) {
-          child.castShadow = false
-          child.receiveShadow = false
-          if (child.material) {
-            child.material.depthWrite = true
-            if (child.material.map) {
-              child.material.map.anisotropy = 8
-            }
-          }
-        }
-      })
-
-      this.modelCache.set(weaponId, scene)
+      this.modelCache.set(weaponId, normalizedGroup)
       this.checkCache.set(weaponId, true)
-      return scene.clone()
+      return SkeletonUtils.clone(normalizedGroup)
     } catch (err) {
       this.checkCache.set(weaponId, false)
       return null
     }
+  }
+
+  /**
+   * Universal Weapon Normalizer:
+   * 1. Centers arbitrary models regardless of where origin was exported in Blender/Maya/Unreal
+   * 2. Detects orientation (if X is long axis, rotates +90° to point along -Z into screen)
+   * 3. Normalizes scale to true Valorant FPS dimensions regardless of cm/mm/meters
+   * 4. Applies viewmodel grip offsets and sets anisotropic texture filtering
+   */
+  _normalizeScene(rawScene, weaponId) {
+    rawScene.updateMatrixWorld(true)
+
+    const rawBox = new THREE.Box3().setFromObject(rawScene)
+    const rawCenter = rawBox.getCenter(new THREE.Vector3())
+    const rawSize = rawBox.getSize(new THREE.Vector3())
+
+    const root = new THREE.Group()
+    root.name = `custom_${weaponId}_root`
+
+    const inner = new THREE.Group()
+    inner.name = 'innerModel'
+
+    // 1. Center the raw model to local (0, 0, 0)
+    rawScene.position.sub(rawCenter)
+    inner.add(rawScene)
+
+    // 2. Align orientation to -Z (Forward in Three.js FPS camera view)
+    // In Three.js right-handed coordinates: +PI/2 maps +X (muzzle) to -Z (forward)
+    if (rawSize.x > rawSize.z) {
+      inner.rotation.y = Math.PI / 2
+    }
+
+    // 3. Normalize scale to match true first-person weapon length
+    const targetLen = TARGET_LENGTHS[weaponId] || 0.85
+    const maxDim = Math.max(rawSize.x, rawSize.y, rawSize.z)
+    if (maxDim > 0.001) {
+      const scaleFactor = targetLen / maxDim
+      inner.scale.setScalar(scaleFactor)
+    }
+
+    // 4. Fine-tuned Viewmodel Grip Offset
+    const config = WEAPON_CONFIGS[weaponId]
+    if (config?.offset) {
+      inner.position.add(config.offset)
+    }
+
+    root.add(inner)
+
+    // 5. Optimize materials, textures, and depth
+    root.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = false
+        child.receiveShadow = false
+        child.frustumCulled = false // Never cull viewmodel parts in first-person camera
+        if (child.material) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material]
+          for (const mat of mats) {
+            mat.depthWrite = true
+            // Sanitize Unreal Engine / Sketchfab negative or out-of-range PBR factors
+            if (mat.roughness !== undefined) {
+              mat.roughness = THREE.MathUtils.clamp(mat.roughness, 0.1, 0.9)
+            }
+            if (mat.metalness !== undefined) {
+              mat.metalness = THREE.MathUtils.clamp(mat.metalness, 0.0, 0.9)
+            }
+            if (mat.opacity >= 0.95) {
+              mat.transparent = false
+            }
+            if (mat.map) {
+              mat.map.anisotropy = 8
+            }
+          }
+        }
+      }
+    })
+
+    return root
   }
 
   _loadGLTF(url) {

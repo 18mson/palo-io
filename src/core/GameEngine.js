@@ -43,6 +43,7 @@ export class GameEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 1.10
     this.renderer.setClearColor(0x70b2fa, 1.0)
+    this.renderer.info.autoReset = false
     this.scene.background = new THREE.Color(0x70b2fa)
 
     const wrapper = document.getElementById('canvas-wrapper')
@@ -54,6 +55,7 @@ export class GameEngine {
 
   _initControls() {
     this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
+    this.overrideCamera = null
 
     this.controls.addEventListener('lock', () => {
       bus.emit('controls:locked')
@@ -64,13 +66,21 @@ export class GameEngine {
 
     const gameEl = document.getElementById('game-container')
     gameEl.addEventListener('click', (e) => {
+      if (this.overrideCamera) return // Prevent locking cursor in top-down / debug override modes
       const overlay = document.getElementById('play-overlay')
       if (overlay && !overlay.classList.contains('hidden')) return
-      if (e.target.closest('button') || e.target.closest('#po-play-btn')) return
+      if (e.target.closest('button') || e.target.closest('#po-play-btn') || e.target.closest('input')) return
       if (!this.controls.isLocked) {
         this.controls.lock()
       }
     })
+  }
+
+  setOverrideCamera(cam) {
+    this.overrideCamera = cam
+    if (cam) {
+      this.unlockPointer()
+    }
   }
 
   _handleResize() {
@@ -84,6 +94,15 @@ export class GameEngine {
     this.camera.updateProjectionMatrix()
     this.viewmodelCamera.aspect = width / height
     this.viewmodelCamera.updateProjectionMatrix()
+    if (this.overrideCamera && this.overrideCamera.isOrthographicCamera) {
+      const aspect = width / height
+      const fH = this.overrideCamera._frustumHeight || 130
+      this.overrideCamera.left = (-fH * aspect) / 2
+      this.overrideCamera.right = (fH * aspect) / 2
+      this.overrideCamera.top = fH / 2
+      this.overrideCamera.bottom = -fH / 2
+      this.overrideCamera.updateProjectionMatrix()
+    }
     this.renderer.setSize(width, height)
   }
 
@@ -119,11 +138,15 @@ export class GameEngine {
     // 2. Clear Depth Buffer
     // 3. Render Viewmodel Overlay (Weapon, Arms, MuzzleFlash)
     // Guarantees first-person weapon NEVER clips into walls or map geometry!
+    this.renderer.info.reset()
     this.renderer.autoClear = false
     this.renderer.clear()
-    this.renderer.render(this.scene, this.camera)
-    this.renderer.clearDepth()
-    this.renderer.render(this.viewmodelScene, this.viewmodelCamera)
+    const activeCamera = this.overrideCamera || this.camera
+    this.renderer.render(this.scene, activeCamera)
+    if (!this.overrideCamera) {
+      this.renderer.clearDepth()
+      this.renderer.render(this.viewmodelScene, this.viewmodelCamera)
+    }
   }
 
   get isLocked() {

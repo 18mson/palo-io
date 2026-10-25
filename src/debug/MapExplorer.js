@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import ascentMap from '../map/maps/ascent.json'
+import { makeDraggable } from '../ui/draggable.js'
 
 /**
  * MapExplorer — Special Map Exploration & Debug Mode
@@ -12,40 +14,94 @@ import * as THREE from 'three'
  *  - On-screen debug HUD & Interactive Teleport bar
  */
 
-export const TELEPORT_ZONES = [
-  { id: 'a_site',       name: 'A Site (Plant)',       x: -34.0, y: 0.90, z: -4.0,  key: '1' },
-  { id: 'a_heaven',     name: 'A Heaven (Balcony)',   x: -44.0, y: 4.70, z: -4.0,  key: '2' },
-  { id: 'a_hell',       name: 'A Hell (Under)',       x: -46.0, y: 0.90, z: -4.0,  key: '3' },
-  { id: 'a_gen',        name: 'A Generator (Boost)',  x: -32.5, y: 3.40, z: -14.0, key: '4' },
-  { id: 'mid_bridge',   name: 'Mid Bridge (High)',    x: 0.0,   y: 4.35, z: 0.0,   key: '5' },
-  { id: 'mid_catwalk',  name: 'Mid Catwalk (Terrace)',x: -9.5,  y: 2.70, z: -13.0, key: '6' },
-  { id: 'mid_canal',    name: 'Mid Canal (Water)',    x: 0.0,   y: 0.50, z: 0.0,   key: '7' },
-  { id: 'b_site',       name: 'B Site (Plant)',       x: 34.0,  y: 0.90, z: -4.0,  key: '8' },
-  { id: 'b_heaven',     name: 'B Heaven (Window)',    x: 40.0,  y: 4.30, z: 14.0,  key: '9' },
-  { id: 'b_hell',       name: 'B Hell (Under Window)',x: 42.0,  y: 0.90, z: 14.0,  key: '0' },
-  { id: 'b_backsite',   name: 'B Backsite Deck',      x: 42.0,  y: 1.85, z: -8.0,  key: '-' },
-  { id: 'atk_spawn',    name: 'Attacker Spawn',       x: 0.0,   y: 0.90, z: -46.0, key: '[' },
-  { id: 'def_spawn',    name: 'Defender Spawn',       x: 0.0,   y: 0.90, z: 46.0,  key: ']' }
-]
+export function buildTeleportZones(zones) {
+  const defaultKeys = {
+    'siteA': '1',
+    'aHeaven': '2',
+    'aHell': '3',
+    'midCourtyard': '5',
+    'midCanal': '7',
+    'siteB': '8',
+    'bHeaven': '9',
+    'bHell': '0',
+    'westAlley': '-',
+    'eastAlley': '=',
+    'attackerSpawn': '[',
+    'defenderSpawn': ']'
+  }
+
+  return (zones || []).map((z, idx) => {
+    const cx = (z.minX + z.maxX) / 2
+    const cz = (z.minZ + z.maxZ) / 2
+    const cy = z.y ?? (z.minY != null ? (z.minY + 0.9) : 0.9)
+    const key = z.key || defaultKeys[z.id] || String((idx + 1) % 10)
+    return {
+      id: z.id,
+      name: z.name,
+      x: cx,
+      y: cy,
+      z: cz,
+      key,
+      minX: z.minX,
+      maxX: z.maxX,
+      minZ: z.minZ,
+      maxZ: z.maxZ,
+      minY: z.minY,
+      maxY: z.maxY,
+      color: z.color,
+      desc: z.desc
+    }
+  })
+}
+
+export const TELEPORT_ZONES = buildTeleportZones(ascentMap.zones)
 
 export class MapExplorer {
-  constructor(scene, camera, player, mapLoader, bots) {
+  constructor(scene, camera, player, mapLoader, bots, renderer = null, engine = null) {
     this.scene       = scene
     this.camera      = camera
     this.player      = player
     this.mapLoader   = mapLoader
     this.bots        = bots
+    this.renderer    = renderer
+    this.engine      = engine
+
+    this.zones         = this.mapLoader?.getZones?.() || ascentMap.zones || []
+    this.teleportZones = buildTeleportZones(this.zones)
 
     this.isActive       = false
     this.showWireframe  = false
     this.botState       = 'frozen' // 'frozen' | 'passive' | 'active'
     this.wireframeGroup = null
 
+    // Top-down Orthographic Mode & Blueprint Calibration
+    this.isTopdown            = false
+    this.topdownFrustumHeight = 130
+    this.topdownPan           = { x: 0, z: 0 }
+    this.topdownCamera        = null
+    this.topdownGroup         = null
+    this.blueprintGroup       = null
+    this.blueprintMesh        = null
+    this.blueprintMaterial    = null
+    this.zonesGroup           = null
+    this.cursorWorldPos       = { x: 0, z: 0 }
+
+    const savedCalib = JSON.parse(localStorage.getItem('palo_topdown_calibration') || '{}')
+    this.calibration = {
+      offsetX: Number(savedCalib.offsetX ?? 0.0),
+      offsetZ: Number(savedCalib.offsetZ ?? 0.0),
+      scale: Number(savedCalib.scale ?? 1.0),
+      rotation: Number(savedCalib.rotation ?? 0.0),
+      opacity: Number(savedCalib.opacity ?? 0.5),
+      showZones: Boolean(savedCalib.showZones ?? true)
+    }
+
     // Telemetry & FPS
     this.lastFpsUpdate = performance.now()
     this.framesCount   = 0
     this.currentFps    = 60
 
+    this._initTopdownComponents()
     this._createUI()
     this._bindEvents()
   }
@@ -64,6 +120,9 @@ export class MapExplorer {
 
   disable() {
     this.isActive = false
+    if (this.isTopdown) {
+      this.setTopdown(false)
+    }
     if (this.player) {
       this.player.setNoclip(false)
       this.player.isGodMode = false
@@ -196,6 +255,253 @@ export class MapExplorer {
     return this.showWireframe
   }
 
+  // ── Top-Down Orthographic Blueprint Mode ────────────────
+  _initTopdownComponents() {
+    // 1. Orthographic Camera positioned at Y=150 looking straight down at (0, 0, 0)
+    const aspect = window.innerWidth / window.innerHeight
+    const fH = this.topdownFrustumHeight
+    this.topdownCamera = new THREE.OrthographicCamera(
+      (-fH * aspect) / 2,
+      (fH * aspect) / 2,
+      fH / 2,
+      -fH / 2,
+      1,
+      1000
+    )
+    this.topdownCamera._frustumHeight = fH
+    this.topdownCamera.position.set(0, 150, 0)
+    // Up is (0, 0, -1) so Attacker Spawn (-Z) is at top of screen, Defender Spawn (+Z) is at bottom
+    this.topdownCamera.up.set(0, 0, -1)
+    this.topdownCamera.lookAt(0, 0, 0)
+
+    // 2. Container Group for all topdown visual aids
+    this.topdownGroup = new THREE.Group()
+    this.topdownGroup.visible = false
+    this.scene.add(this.topdownGroup)
+
+    // 3. Blueprint Texture & Mesh (110x110m map island centered at 0,0)
+    const texLoader = new THREE.TextureLoader()
+    const tex = texLoader.load('/docs/reference/topdown.png')
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.minFilter = THREE.LinearFilter
+    tex.magFilter = THREE.LinearFilter
+
+    const planeGeo = new THREE.PlaneGeometry(110, 110)
+    this.blueprintMaterial = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      opacity: this.calibration.opacity,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+    this.blueprintMesh = new THREE.Mesh(planeGeo, this.blueprintMaterial)
+    // Rotate -90 deg on X so local +Y maps to world -Z (attacker spawn at top)
+    this.blueprintMesh.rotation.x = -Math.PI / 2
+
+    this.blueprintGroup = new THREE.Group()
+    this.blueprintGroup.add(this.blueprintMesh)
+    this.topdownGroup.add(this.blueprintGroup)
+
+    // 4. Zone Rectangles Group
+    this.zonesGroup = new THREE.Group()
+    this._buildZoneRectangles()
+    this.topdownGroup.add(this.zonesGroup)
+
+    this._updateBlueprintTransform()
+  }
+
+  _buildZoneRectangles() {
+    if (!this.zonesGroup) return
+    while (this.zonesGroup.children.length > 0) {
+      const child = this.zonesGroup.children[0]
+      this.zonesGroup.remove(child)
+      if (child.geometry) child.geometry.dispose()
+      if (child.material) {
+        if (child.material.map) child.material.map.dispose()
+        child.material.dispose()
+      }
+    }
+
+    const list = (this.mapLoader?.getZones?.() && this.mapLoader.getZones().length > 0)
+      ? this.mapLoader.getZones()
+      : (this.zones?.length ? this.zones : ascentMap.zones || [])
+
+    for (const z of list) {
+      const w = z.maxX - z.minX
+      const d = z.maxZ - z.minZ
+      const cx = (z.minX + z.maxX) / 2
+      const cz = (z.minZ + z.maxZ) / 2
+      const col = z.color || '#00f0ff'
+
+      // 1. Boundary outline (line on Y=14.8 above map blocks)
+      const pts = [
+        new THREE.Vector3(z.minX, 14.8, z.minZ),
+        new THREE.Vector3(z.maxX, 14.8, z.minZ),
+        new THREE.Vector3(z.maxX, 14.8, z.maxZ),
+        new THREE.Vector3(z.minX, 14.8, z.maxZ),
+        new THREE.Vector3(z.minX, 14.8, z.minZ)
+      ]
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts)
+      const lineMat = new THREE.LineBasicMaterial({
+        color: new THREE.Color(col),
+        transparent: true,
+        opacity: 0.95,
+        linewidth: 2
+      })
+      const line = new THREE.Line(lineGeo, lineMat)
+      this.zonesGroup.add(line)
+
+      // 2. Semi-transparent fill plane
+      const fillGeo = new THREE.PlaneGeometry(w, d)
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(col),
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+      const fillMesh = new THREE.Mesh(fillGeo, fillMat)
+      fillMesh.position.set(cx, 14.75, cz)
+      fillMesh.rotation.x = -Math.PI / 2
+      this.zonesGroup.add(fillMesh)
+
+      // 3. Crisp Zone Label Sprite
+      const canvas = document.createElement('canvas')
+      canvas.width = 256
+      canvas.height = 64
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'
+      ctx.beginPath()
+      ctx.roundRect(4, 4, 248, 56, 8)
+      ctx.fill()
+      ctx.strokeStyle = col
+      ctx.lineWidth = 3
+      ctx.stroke()
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 22px monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(z.name.toUpperCase(), 128, 32)
+
+      const spriteTex = new THREE.CanvasTexture(canvas)
+      const spriteMat = new THREE.SpriteMaterial({
+        map: spriteTex,
+        transparent: true,
+        depthTest: false
+      })
+      const sprite = new THREE.Sprite(spriteMat)
+      sprite.position.set(cx, 15.1, cz)
+      const sW = Math.max(8, Math.min(w * 0.75, 16))
+      const sH = sW * (64 / 256)
+      sprite.scale.set(sW, sH, 1)
+      this.zonesGroup.add(sprite)
+    }
+
+    this.zonesGroup.visible = this.calibration.showZones
+  }
+
+  _updateBlueprintTransform() {
+    if (this.blueprintGroup) {
+      this.blueprintGroup.position.set(this.calibration.offsetX, 14.5, this.calibration.offsetZ)
+      this.blueprintGroup.rotation.y = THREE.MathUtils.degToRad(this.calibration.rotation)
+      this.blueprintGroup.scale.set(this.calibration.scale, 1, this.calibration.scale)
+    }
+    if (this.blueprintMaterial) {
+      this.blueprintMaterial.opacity = this.calibration.opacity
+    }
+    if (this.zonesGroup) {
+      this.zonesGroup.visible = this.calibration.showZones
+    }
+
+    // Sync UI inputs if created
+    const opacitySlider = document.getElementById('topdown-opacity')
+    const opacityVal = document.getElementById('topdown-opacity-val')
+    const oxInput = document.getElementById('topdown-ox')
+    const ozInput = document.getElementById('topdown-oz')
+    const scaleInput = document.getElementById('topdown-scale')
+    const rotInput = document.getElementById('topdown-rot')
+    const btnToggleZones = document.getElementById('btn-topdown-zones')
+
+    if (opacitySlider) opacitySlider.value = this.calibration.opacity
+    if (opacityVal) opacityVal.textContent = `${Math.round(this.calibration.opacity * 100)}%`
+    if (oxInput) oxInput.value = this.calibration.offsetX.toFixed(1)
+    if (ozInput) ozInput.value = this.calibration.offsetZ.toFixed(1)
+    if (scaleInput) scaleInput.value = this.calibration.scale.toFixed(3)
+    if (rotInput) rotInput.value = this.calibration.rotation.toFixed(1)
+    if (btnToggleZones) {
+      btnToggleZones.classList.toggle('active', this.calibration.showZones)
+      btnToggleZones.innerHTML = `<span>📐 Zona: <b>${this.calibration.showZones ? 'ON' : 'OFF'}</b></span>`
+    }
+
+    localStorage.setItem('palo_topdown_calibration', JSON.stringify(this.calibration))
+  }
+
+  toggleTopdown() {
+    this.setTopdown(!this.isTopdown)
+    return this.isTopdown
+  }
+
+  setTopdown(active) {
+    this.isTopdown = active
+    if (this.isTopdown) {
+      if (!this.isActive) this.enable()
+      this.topdownGroup.visible = true
+      if (this.topdownContainer) this.topdownContainer.style.display = 'block'
+      this.engine?.setOverrideCamera(this.topdownCamera)
+      this.engine?.unlockPointer()
+      this._updateTopdownCameraFrustum()
+      this._updateBlueprintTransform()
+      this._showToast('TOP-DOWN CAMERA: ON [F4]')
+    } else {
+      this.topdownGroup.visible = false
+      if (this.topdownContainer) this.topdownContainer.style.display = 'none'
+      if (this.cursorTooltipEl) this.cursorTooltipEl.style.display = 'none'
+      this.engine?.setOverrideCamera(null)
+      this._showToast('TOP-DOWN CAMERA: OFF')
+    }
+    this._updateHUD()
+  }
+
+  _updateTopdownCameraFrustum() {
+    if (!this.topdownCamera) return
+    const aspect = window.innerWidth / window.innerHeight
+    const fH = this.topdownFrustumHeight
+    this.topdownCamera.left = (-fH * aspect) / 2
+    this.topdownCamera.right = (fH * aspect) / 2
+    this.topdownCamera.top = fH / 2
+    this.topdownCamera.bottom = -fH / 2
+    this.topdownCamera._frustumHeight = fH
+    this.topdownCamera.position.set(this.topdownPan.x, 150, this.topdownPan.z)
+    this.topdownCamera.lookAt(this.topdownPan.x, 0, this.topdownPan.z)
+    this.topdownCamera.updateProjectionMatrix()
+  }
+
+  _updateCursorCoords(x, z, mouseScreenX, mouseScreenY) {
+    this.cursorWorldPos = { x, z }
+    const snapX = Math.round(x * 2) / 2
+    const snapZ = Math.round(z * 2) / 2
+    const zone = this.detectZone({ x, y: 0, z })
+
+    const coordValEl = document.getElementById('topdown-coord-val')
+    const gridValEl = document.getElementById('topdown-grid-val')
+    const zoneBadgeEl = document.getElementById('topdown-zone-badge')
+
+    if (coordValEl) coordValEl.textContent = `X: ${x >= 0 ? '+' : ''}${x.toFixed(2)} | Z: ${z >= 0 ? '+' : ''}${z.toFixed(2)}`
+    if (gridValEl) gridValEl.textContent = `Grid(0.5): [${snapX >= 0 ? '+' : ''}${snapX.toFixed(1)}, ${snapZ >= 0 ? '+' : ''}${snapZ.toFixed(1)}]`
+    if (zoneBadgeEl) {
+      zoneBadgeEl.textContent = zone.name
+      zoneBadgeEl.style.color = zone.color
+      zoneBadgeEl.style.borderColor = zone.color
+    }
+
+    if (this.cursorTooltipEl) {
+      this.cursorTooltipEl.style.display = 'block'
+      this.cursorTooltipEl.style.left = `${mouseScreenX}px`
+      this.cursorTooltipEl.style.top = `${mouseScreenY}px`
+      this.cursorTooltipEl.textContent = `X: ${x.toFixed(2)}, Z: ${z.toFixed(2)} [${zone.name}]`
+    }
+  }
+
   // ── Teleportation ───────────────────────────────────────
   teleportTo(x, y, z, zoneName = null) {
     if (!this.player) return
@@ -206,67 +512,51 @@ export class MapExplorer {
   }
 
   teleportByZoneId(zoneId) {
-    const zone = TELEPORT_ZONES.find(z => z.id === zoneId)
+    const list = (this.teleportZones && this.teleportZones.length > 0) ? this.teleportZones : TELEPORT_ZONES
+    const zone = list.find(z => z.id === zoneId)
     if (zone) this.teleportTo(zone.x, zone.y, zone.z, zone.name)
   }
 
   // ── Zone Detection Logic ────────────────────────────────
   detectZone(pos) {
+    const zones = (this.mapLoader?.getZones?.() && this.mapLoader.getZones().length > 0)
+      ? this.mapLoader.getZones()
+      : (this.zones?.length ? this.zones : ascentMap.zones || [])
+
     const { x, y, z } = pos
 
-    // North / South Spawns
-    if (z <= -35) return { name: 'ATTACKER SPAWN', color: '#38bdf8', desc: 'North Entrance Pavilion' }
-    if (z >= 35)  return { name: 'DEFENDER SPAWN', color: '#ff4655', desc: 'South Defense Pavilion' }
+    // Sort by volume ascending so specific sub-zones take precedence (e.g. aHeaven/aHell or midCanal)
+    const sortedZones = [...zones].sort((a, b) => {
+      const areaA = (a.maxX - a.minX) * (a.maxZ - a.minZ)
+      const areaB = (b.maxX - b.minX) * (b.maxZ - b.minZ)
+      return areaA - areaB
+    })
 
-    // Central Mid Area
-    if (x >= -18 && x <= 18) {
-      if (y >= 3.0 && Math.abs(z) <= 3.5) {
-        return { name: 'MID BRIDGE (HIGH GROUND)', color: '#f59e0b', desc: 'Elevated Deck Over Canal' }
-      }
-      if (x <= -6.5 && z >= -22 && z <= -5) {
-        return { name: 'MID CATWALK (TERRACE)', color: '#a855f7', desc: 'Elevated Lane to A Short' }
-      }
-      if (Math.abs(x) <= 4.5 && Math.abs(z) <= 22 && y <= 1.0) {
-        return { name: 'MID WATER CANAL (SUB-LEVEL)', color: '#06b6d4', desc: 'Sunken Turquoise Water Bed' }
-      }
-      if (x >= 9 && Math.abs(z) <= 8 && y >= 1.0) {
-        return { name: 'MID MARKET (DOORWAY)', color: '#10b981', desc: 'Raised Market Connection' }
-      }
-      return { name: 'MID COURTYARD', color: '#e2e8f0', desc: 'Central Open Courtyard' }
+    const colorPalette = {
+      attackerSpawn: '#38bdf8',
+      defenderSpawn: '#ff4655',
+      midCourtyard: '#e2e8f0',
+      midCanal: '#06b6d4',
+      siteA: '#00f0ff',
+      siteB: '#00f0ff',
+      aHeaven: '#f59e0b',
+      aHell: '#ef4444',
+      bHeaven: '#f59e0b',
+      bHell: '#ef4444',
+      westAlley: '#94a3b8',
+      eastAlley: '#94a3b8'
     }
 
-    // A Site Section (West)
-    if (x < -18) {
-      if (x <= -40 && y >= 3.2 && z >= -14 && z <= 6) {
-        return { name: 'A HEAVEN (SNIPER BALCONY)', color: '#f59e0b', desc: 'Level 2 Overlook over Site A' }
+    for (const zone of sortedZones) {
+      if (x >= zone.minX && x <= zone.maxX && z >= zone.minZ && z <= zone.maxZ) {
+        if (zone.minY != null && y < zone.minY) continue
+        if (zone.maxY != null && y > zone.maxY) continue
+        return {
+          name: zone.name.toUpperCase(),
+          color: zone.color || colorPalette[zone.id] || '#00f0ff',
+          desc: zone.desc || `Tactical Sector: ${zone.name}`
+        }
       }
-      if (x <= -40 && y <= 3.0 && z >= -14 && z <= 6) {
-        return { name: 'A HELL (UNDER HEAVEN)', color: '#ef4444', desc: 'Covered Ground Floor Refuge' }
-      }
-      if (x >= -35 && x <= -29 && z <= -12 && y >= 2.0) {
-        return { name: 'A GENERATOR (BOOST ROOF)', color: '#a855f7', desc: 'Tiered High-Ground Boost' }
-      }
-      if (z <= -20) {
-        return { name: 'A MAIN & A WINE', color: '#64748b', desc: 'Chokepoint & Sunken Alcove' }
-      }
-      return { name: 'A SITE (PLANT ZONE)', color: '#00f0ff', desc: 'Open Courtyard & Water Basin' }
-    }
-
-    // B Site Section (East)
-    if (x > 18) {
-      if (x >= 36 && z >= 8 && z <= 20 && y >= 3.0) {
-        return { name: 'B HEAVEN (SNIPER WINDOW)', color: '#f59e0b', desc: 'Pagoda Tower Upper Window' }
-      }
-      if (x >= 36 && z >= 8 && z <= 20 && y <= 2.8) {
-        return { name: 'B HELL (UNDER WINDOW)', color: '#ef4444', desc: 'Ground Floor Tower Alcove' }
-      }
-      if (x >= 36 && z <= -2 && y >= 0.8) {
-        return { name: 'B BACKSITE (RAISED DECK)', color: '#a855f7', desc: 'Elevated Wooden Hold Deck' }
-      }
-      if (z <= -20) {
-        return { name: 'B MAIN & CORRIDOR', color: '#64748b', desc: 'Tight Flank Approach' }
-      }
-      return { name: 'B SITE (PLANT ZONE)', color: '#00f0ff', desc: 'Tight Yard & Triple Box' }
     }
 
     return { name: 'MAP FLANK CORRIDOR', color: '#94a3b8', desc: 'Outer Rotation Alley' }
@@ -301,9 +591,13 @@ export class MapExplorer {
     overlay.innerHTML = `
       <!-- Top Telemetry Header -->
       <div class="explorer-card telemetry-card">
-        <div class="explorer-header-row">
-          <div class="explorer-badge">🛠️ MAP EXPLORER & DEBUG</div>
-          <div class="explorer-fps-badge" id="exp-fps">60 FPS</div>
+        <div class="explorer-header-row" title="Klik & drag untuk memindahkan panel (Double click untuk reset)">
+          <div class="explorer-badge"><span class="drag-grip-icon" title="Drag to move">⠿</span> 🛠️ MAP EXPLORER & DEBUG</div>
+          <div class="explorer-stats-group">
+            <div class="explorer-stat-badge explorer-fps-badge" id="exp-fps">60 FPS</div>
+            <div class="explorer-stat-badge explorer-calls-badge" id="exp-calls">0 DC</div>
+            <div class="explorer-stat-badge explorer-tris-badge" id="exp-tris">0 TRIS</div>
+          </div>
           <button class="explorer-close-btn" id="btn-exp-close" title="Tutup / Sembunyikan [F1]">✕</button>
         </div>
         <div class="explorer-zone-row">
@@ -348,6 +642,11 @@ export class MapExplorer {
             <span class="btn-icon">🛡️</span>
             <span class="btn-text">God Mode: <b id="exp-god-status">ON</b></span>
             <span class="btn-key">[G]</span>
+          </button>
+          <button class="exp-action-btn" id="btn-toggle-topdown">
+            <span class="btn-icon">🗺️</span>
+            <span class="btn-text">Top-Down: <b id="exp-topdown-status">OFF</b></span>
+            <span class="btn-key">[F4]</span>
           </button>
           <button class="exp-action-btn secondary" id="btn-respawn-bots">
             <span class="btn-icon">🔄</span>
@@ -417,6 +716,18 @@ export class MapExplorer {
                 <li>Tekan <b>[P]</b> untuk menyalin koordinat X, Y, Z ke clipboard untuk dicatat.</li>
               </ul>
             </div>
+            <div class="help-section">
+              <div class="help-sec-title">🗺️ KAMERA TOP-DOWN BLUEPRINT ([F4])</div>
+              <ul>
+                <li><b>F4</b>: Toggle kamera orthographic tampak atas (top-down view).</li>
+                <li><b>Blueprint docs/reference/topdown.png</b>: Terproyeksi semi-transparan pada area 110x110m centered di (0,0).</li>
+                <li><b>Attacker Spawn di atas (Z = -46), Defender Spawn di bawah (Z = +46)</b>.</li>
+                <li><b>Koordinat Cursor Real-time</b>: Arahkan mouse untuk membaca posisi dunia riil (X, Z) dan grid 0.5m.</li>
+                <li><b>Klik di Map</b>: Langsung menyalin koordinat X, Z ke clipboard.</li>
+                <li><b>Scroll Mouse</b>: Zoom in / Zoom out.</li>
+                <li><b>Klik Kanan / Shift + Drag</b>: Geser / Pan kamera.</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -425,9 +736,196 @@ export class MapExplorer {
     document.body.appendChild(overlay)
     this.overlayEl = overlay
 
+    // Top-down Blueprint Container (Header Bar + Calibration Card + Cursor Tooltip)
+    const topdownContainer = document.createElement('div')
+    topdownContainer.id = 'topdown-blueprint-container'
+    topdownContainer.className = 'topdown-container'
+    topdownContainer.style.display = 'none'
+
+    topdownContainer.innerHTML = `
+      <!-- Fixed Header Bar at Top Center -->
+      <div class="topdown-header-bar">
+        <div class="topdown-title-pill">
+          <span>🗺️</span> TOP-DOWN BLUEPRINT
+        </div>
+        <div class="topdown-coord-display">
+          <span class="topdown-coord-val" id="topdown-coord-val">X: 0.00 | Z: 0.00</span>
+          <span class="topdown-grid-val" id="topdown-grid-val">Grid(0.5): [0.0, 0.0]</span>
+          <span class="topdown-zone-badge" id="topdown-zone-badge">MID COURTYARD</span>
+        </div>
+        <button class="topdown-exit-btn" id="btn-topdown-exit">✕ Keluar [F4]</button>
+      </div>
+
+      <!-- Left Floating Blueprint Calibration Card -->
+      <div class="topdown-calib-card">
+        <div class="calib-header">
+          <div class="calib-title">⚙️ BLUEPRINT CALIBRATION</div>
+          <button class="calib-action-btn" id="btn-calib-reset" title="Reset Kalibrasi">🔄 Reset</button>
+        </div>
+
+        <!-- Opacity Slider -->
+        <div class="calib-row">
+          <span class="calib-label">Opacity:</span>
+          <div class="calib-controls" style="flex:1">
+            <input type="range" min="0" max="1" step="0.01" class="calib-slider" id="topdown-opacity" value="${this.calibration.opacity}">
+            <span class="calib-val-badge" id="topdown-opacity-val">${Math.round(this.calibration.opacity * 100)}%</span>
+          </div>
+        </div>
+
+        <!-- Offset X -->
+        <div class="calib-row">
+          <span class="calib-label">Offset X (m):</span>
+          <div class="calib-controls">
+            <button class="calib-btn-step" id="btn-ox-minus">-</button>
+            <input type="number" step="0.5" class="calib-input" id="topdown-ox" value="${this.calibration.offsetX.toFixed(1)}">
+            <button class="calib-btn-step" id="btn-ox-plus">+</button>
+          </div>
+        </div>
+
+        <!-- Offset Z -->
+        <div class="calib-row">
+          <span class="calib-label">Offset Z (m):</span>
+          <div class="calib-controls">
+            <button class="calib-btn-step" id="btn-oz-minus">-</button>
+            <input type="number" step="0.5" class="calib-input" id="topdown-oz" value="${this.calibration.offsetZ.toFixed(1)}">
+            <button class="calib-btn-step" id="btn-oz-plus">+</button>
+          </div>
+        </div>
+
+        <!-- Scale -->
+        <div class="calib-row">
+          <span class="calib-label">Scale:</span>
+          <div class="calib-controls">
+            <button class="calib-btn-step" id="btn-scale-minus">-</button>
+            <input type="number" step="0.005" class="calib-input" id="topdown-scale" value="${this.calibration.scale.toFixed(3)}">
+            <button class="calib-btn-step" id="btn-scale-plus">+</button>
+          </div>
+        </div>
+
+        <!-- Rotation -->
+        <div class="calib-row">
+          <span class="calib-label">Rotation (°):</span>
+          <div class="calib-controls">
+            <button class="calib-btn-step" id="btn-rot-minus">-</button>
+            <input type="number" step="0.5" class="calib-input" id="topdown-rot" value="${this.calibration.rotation.toFixed(1)}">
+            <button class="calib-btn-step" id="btn-rot-plus">+</button>
+          </div>
+        </div>
+
+        <!-- Buttons Row -->
+        <div class="calib-btn-group">
+          <button class="calib-action-btn ${this.calibration.showZones ? 'active' : ''}" id="btn-topdown-zones">
+            <span>📐 Zona: <b>${this.calibration.showZones ? 'ON' : 'OFF'}</b></span>
+          </button>
+          <button class="calib-action-btn" id="btn-topdown-center" title="Kembalikan pandangan ke tengah (0,0)">
+            <span>🔍 Reset View</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Floating Cursor Tooltip -->
+      <div class="topdown-cursor-tooltip" id="topdown-cursor-tooltip">X: 0.00, Z: 0.00</div>
+    `
+
+    document.body.appendChild(topdownContainer)
+    this.topdownContainer = topdownContainer
+    this.cursorTooltipEl = topdownContainer.querySelector('#topdown-cursor-tooltip')
+
+    // Topdown Calibration Event Listeners
+    const opacitySlider = topdownContainer.querySelector('#topdown-opacity')
+    opacitySlider?.addEventListener('input', (e) => {
+      this.calibration.opacity = parseFloat(e.target.value)
+      this._updateBlueprintTransform()
+    })
+
+    const oxInput = topdownContainer.querySelector('#topdown-ox')
+    oxInput?.addEventListener('change', (e) => {
+      this.calibration.offsetX = parseFloat(e.target.value) || 0
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-ox-minus')?.addEventListener('click', () => {
+      this.calibration.offsetX = Math.round((this.calibration.offsetX - 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-ox-plus')?.addEventListener('click', () => {
+      this.calibration.offsetX = Math.round((this.calibration.offsetX + 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+
+    const ozInput = topdownContainer.querySelector('#topdown-oz')
+    ozInput?.addEventListener('change', (e) => {
+      this.calibration.offsetZ = parseFloat(e.target.value) || 0
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-oz-minus')?.addEventListener('click', () => {
+      this.calibration.offsetZ = Math.round((this.calibration.offsetZ - 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-oz-plus')?.addEventListener('click', () => {
+      this.calibration.offsetZ = Math.round((this.calibration.offsetZ + 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+
+    const scaleInput = topdownContainer.querySelector('#topdown-scale')
+    scaleInput?.addEventListener('change', (e) => {
+      this.calibration.scale = Math.max(0.1, parseFloat(e.target.value) || 1.0)
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-scale-minus')?.addEventListener('click', () => {
+      this.calibration.scale = Math.max(0.1, Math.round((this.calibration.scale - 0.005) * 1000) / 1000)
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-scale-plus')?.addEventListener('click', () => {
+      this.calibration.scale = Math.round((this.calibration.scale + 0.005) * 1000) / 1000
+      this._updateBlueprintTransform()
+    })
+
+    const rotInput = topdownContainer.querySelector('#topdown-rot')
+    rotInput?.addEventListener('change', (e) => {
+      this.calibration.rotation = parseFloat(e.target.value) || 0
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-rot-minus')?.addEventListener('click', () => {
+      this.calibration.rotation = Math.round((this.calibration.rotation - 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+    topdownContainer.querySelector('#btn-rot-plus')?.addEventListener('click', () => {
+      this.calibration.rotation = Math.round((this.calibration.rotation + 0.5) * 10) / 10
+      this._updateBlueprintTransform()
+    })
+
+    topdownContainer.querySelector('#btn-calib-reset')?.addEventListener('click', () => {
+      this.calibration.offsetX = 0.0
+      this.calibration.offsetZ = 0.0
+      this.calibration.scale = 1.0
+      this.calibration.rotation = 0.0
+      this.calibration.opacity = 0.5
+      this._updateBlueprintTransform()
+      this._showToast('KALIBRASI DI-RESET KE DEFAULT')
+    })
+
+    topdownContainer.querySelector('#btn-topdown-zones')?.addEventListener('click', () => {
+      this.calibration.showZones = !this.calibration.showZones
+      this._updateBlueprintTransform()
+    })
+
+    topdownContainer.querySelector('#btn-topdown-center')?.addEventListener('click', () => {
+      this.topdownPan = { x: 0, z: 0 }
+      this.topdownFrustumHeight = 130
+      this._updateTopdownCameraFrustum()
+      this._showToast('PANDANGAN DIKEMBALIKAN KE TENGAH (0,0)')
+    })
+
+    topdownContainer.querySelector('#btn-topdown-exit')?.addEventListener('click', () => {
+      this.setTopdown(false)
+    })
+
+    this._initTopdownRaycasting()
+
     // Render Teleport Pills
     const pillsContainer = overlay.querySelector('#teleport-pills-container')
-    for (const z of TELEPORT_ZONES) {
+    const pillZones = (this.teleportZones && this.teleportZones.length > 0) ? this.teleportZones : TELEPORT_ZONES
+    for (const z of pillZones) {
       const pill = document.createElement('button')
       pill.className = 'teleport-pill'
       pill.innerHTML = `<span class="pill-key">${z.key}</span> ${z.name}`
@@ -442,6 +940,7 @@ export class MapExplorer {
     overlay.querySelector('#btn-toggle-noclip').addEventListener('click', () => this.toggleNoclip())
     overlay.querySelector('#btn-toggle-wire').addEventListener('click', () => this.toggleWireframe())
     overlay.querySelector('#btn-toggle-bots').addEventListener('click', () => this.cycleBotState())
+    overlay.querySelector('#btn-toggle-topdown')?.addEventListener('click', () => this.toggleTopdown())
     overlay.querySelector('#btn-toggle-god').addEventListener('click', () => {
       if (this.player) {
         this.player.isGodMode = !this.player.isGodMode
@@ -466,6 +965,101 @@ export class MapExplorer {
       const modal = overlay.querySelector('#explorer-help-modal')
       modal.style.display = 'none'
     })
+
+    // Enable Smooth Dragging on Popups
+    const telemetryCard = overlay.querySelector('.telemetry-card')
+    const headerRow = overlay.querySelector('.explorer-header-row')
+    makeDraggable(telemetryCard, headerRow, 'palo_explorer_pos')
+
+    const calibCard = topdownContainer.querySelector('.topdown-calib-card')
+    const calibHeader = topdownContainer.querySelector('.calib-header')
+    if (calibCard && calibHeader) {
+      calibHeader.setAttribute('title', 'Klik & drag untuk memindahkan panel (Double click untuk reset)')
+      makeDraggable(calibCard, calibHeader, 'palo_topdown_calib_pos')
+    }
+  }
+
+  // ── Top-Down Raycasting & Cursor Telemetry ─────────────
+  _initTopdownRaycasting() {
+    const raycaster = new THREE.Raycaster()
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    const mouseVec = new THREE.Vector2()
+    const hitPoint = new THREE.Vector3()
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isTopdown || !this.topdownCamera) return
+      mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1
+      mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1
+      raycaster.setFromCamera(mouseVec, this.topdownCamera)
+      if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+        this._updateCursorCoords(hitPoint.x, hitPoint.z, e.clientX, e.clientY)
+      }
+    })
+
+    window.addEventListener('click', (e) => {
+      if (!this.isTopdown || !this.topdownCamera) return
+      if (e.target.closest('button') || e.target.closest('input')) return
+      mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1
+      mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1
+      raycaster.setFromCamera(mouseVec, this.topdownCamera)
+      if (raycaster.ray.intersectPlane(groundPlane, hitPoint)) {
+        const snapX = Math.round(hitPoint.x * 2) / 2
+        const snapZ = Math.round(hitPoint.z * 2) / 2
+        const text = `X: ${hitPoint.x.toFixed(2)}, Z: ${hitPoint.z.toFixed(2)} (Grid: ${snapX.toFixed(1)}, ${snapZ.toFixed(1)})`
+        navigator.clipboard?.writeText(text).catch(() => {})
+        this._showToast(`KOORDINAT DISALIN: ${text}`)
+      }
+    })
+
+    window.addEventListener('wheel', (e) => {
+      if (!this.isTopdown) return
+      e.preventDefault()
+      const zoomDelta = e.deltaY > 0 ? 10 : -10
+      this.topdownFrustumHeight = Math.max(30, Math.min(260, this.topdownFrustumHeight + zoomDelta))
+      this._updateTopdownCameraFrustum()
+    }, { passive: false })
+
+    let isPanning = false
+    let lastMouse = { x: 0, y: 0 }
+    window.addEventListener('mousedown', (e) => {
+      if (!this.isTopdown) return
+      if (e.button === 2 || e.button === 1 || (e.button === 0 && e.shiftKey)) {
+        isPanning = true
+        lastMouse.x = e.clientX
+        lastMouse.y = e.clientY
+      }
+    })
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isTopdown || !isPanning) return
+      const dx = e.clientX - lastMouse.x
+      const dy = e.clientY - lastMouse.y
+      lastMouse.x = e.clientX
+      lastMouse.y = e.clientY
+      const aspect = window.innerWidth / window.innerHeight
+      const fH = this.topdownFrustumHeight
+      const fW = fH * aspect
+      // Topdown up vector is (0, 0, -1), right vector is (1, 0, 0)
+      this.topdownPan.x -= (dx / window.innerWidth) * fW
+      this.topdownPan.z -= (dy / window.innerHeight) * fH
+      this._updateTopdownCameraFrustum()
+    })
+
+    window.addEventListener('mouseup', () => {
+      isPanning = false
+    })
+
+    window.addEventListener('contextmenu', (e) => {
+      if (this.isTopdown) {
+        e.preventDefault()
+      }
+    })
+
+    window.addEventListener('resize', () => {
+      if (this.isTopdown) {
+        this._updateTopdownCameraFrustum()
+      }
+    })
   }
 
   // ── Keyboard Shortcuts Binding ──────────────────────────
@@ -475,6 +1069,13 @@ export class MapExplorer {
       if (e.code === 'F1' || e.code === 'F3') {
         e.preventDefault()
         this.toggle()
+        return
+      }
+
+      // Toggle Top-down Blueprint Camera on/off with F4
+      if (e.code === 'F4') {
+        e.preventDefault()
+        this.toggleTopdown()
         return
       }
 
@@ -509,27 +1110,13 @@ export class MapExplorer {
         this._copyPosition()
       }
 
-      // Quick Teleport via Alt + Number (or direct Key in noclip)
+      // Quick Teleport via Alt + Key (matches zone.key from top-level zones)
       if (e.altKey) {
-        const keyMap = {
-          'Digit1': 'a_site',
-          'Digit2': 'a_heaven',
-          'Digit3': 'a_hell',
-          'Digit4': 'a_gen',
-          'Digit5': 'mid_bridge',
-          'Digit6': 'mid_catwalk',
-          'Digit7': 'mid_canal',
-          'Digit8': 'b_site',
-          'Digit9': 'b_heaven',
-          'Digit0': 'b_hell',
-          'Minus':  'b_backsite',
-          'BracketLeft':  'atk_spawn',
-          'BracketRight': 'def_spawn'
-        }
-        const zoneId = keyMap[e.code]
-        if (zoneId) {
+        const list = (this.teleportZones && this.teleportZones.length > 0) ? this.teleportZones : TELEPORT_ZONES
+        const matched = list.find(z => z.key === e.key)
+        if (matched) {
           e.preventDefault()
-          this.teleportByZoneId(zoneId)
+          this.teleportTo(matched.x, matched.y, matched.z, matched.name)
         }
       }
     })
@@ -562,6 +1149,18 @@ export class MapExplorer {
     const fpsEl = this.overlayEl.querySelector('#exp-fps')
     if (fpsEl) fpsEl.textContent = `${this.currentFps} FPS`
 
+    if (this.renderer?.info?.render) {
+      const callsEl = this.overlayEl.querySelector('#exp-calls')
+      if (callsEl) {
+        callsEl.textContent = `${this.renderer.info.render.calls} DC`
+      }
+      const trisEl = this.overlayEl.querySelector('#exp-tris')
+      if (trisEl) {
+        const tris = this.renderer.info.render.triangles
+        trisEl.textContent = tris >= 1000 ? `${(tris / 1000).toFixed(1)}k TRIS` : `${tris} TRIS`
+      }
+    }
+
     // Status Badges
     const noclipStatus = this.overlayEl.querySelector('#exp-noclip-status')
     if (noclipStatus) {
@@ -589,6 +1188,12 @@ export class MapExplorer {
       const isGod = this.player?.isGodMode
       godStatus.textContent = isGod ? 'AKTIF' : 'OFF'
       godStatus.style.color = isGod ? '#eab308' : '#94a3b8'
+    }
+
+    const topdownStatus = this.overlayEl.querySelector('#exp-topdown-status')
+    if (topdownStatus) {
+      topdownStatus.textContent = this.isTopdown ? 'ON' : 'OFF'
+      topdownStatus.style.color = this.isTopdown ? '#00f0ff' : '#94a3b8'
     }
   }
 

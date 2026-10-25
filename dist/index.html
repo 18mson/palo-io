@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PALO.IO</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
-  <script type="module" crossorigin src="/assets/index-BA5GV9o5.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CVpVDvYr.css">
+  <script type="module" crossorigin src="/assets/index-BNQ5bUTn.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DL17Q5sy.css">
 </head>
 <body>
   <!-- Three.js canvas gets appended here by GameEngine -->
@@ -99,6 +99,21 @@
         <div class="hud-actions">
           <button class="hud-icon-btn" id="btn-screenshot" title="Take Screenshot (Press P or F2)">📸</button>
           <button class="hud-icon-btn" id="btn-record" title="Record 3s Clip (Press F9 or \)">🎥</button>
+        </div>
+      </div>
+
+      <!-- Valorant Tactical Minimap HUD -->
+      <div id="minimap-hud" class="minimap-hud">
+        <div class="minimap-header">
+          <span class="minimap-zone-badge" id="minimap-zone-badge">📍 ASCENT</span>
+          <div class="minimap-controls">
+            <button class="minimap-btn" id="minimap-btn-mode" title="Toggle Rotate / Fixed Mode">🧭</button>
+            <button class="minimap-btn" id="minimap-btn-zoom" title="Cycle Zoom">1.0x</button>
+            <button class="minimap-btn" id="minimap-btn-expand" title="Expand Tactical Map (M)">⛶</button>
+          </div>
+        </div>
+        <div class="minimap-radar-frame" id="minimap-radar-frame" title="Click or Press [M] to Expand Tactical Map">
+          <canvas id="minimap-canvas" width="200" height="200"></canvas>
         </div>
       </div>
 
@@ -212,8 +227,39 @@
             <span>[RMB] Scope</span>
             <span>[1][2] Swap Weapon</span>
             <span>[R] Reload</span>
+            <span>[M] Tactical Map</span>
             <span>[P / F2] Screenshot</span>
             <span>[ESC] Pause</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Tactical Map Overlay Modal ([M]) -->
+      <div id="tactical-map-modal" class="tactical-map-modal hidden">
+        <div class="tactical-map-backdrop" id="tactical-map-backdrop"></div>
+        <div class="tactical-map-dialog">
+          <div class="tactical-map-header">
+            <div class="tactical-map-title">
+              <span class="map-tag">ASCENT</span>
+              <span class="map-sub">TACTICAL OVERVIEW</span>
+            </div>
+            <div class="tactical-map-location">
+              LOCATION: <b id="tactical-map-zone">MID COURTYARD</b>
+              <span class="coords" id="tactical-map-coords">X: 0.0, Z: 0.0</span>
+            </div>
+            <div class="tactical-map-actions">
+              <button class="btn-tactical-close" id="btn-tactical-close" title="Close Map (M or ESC)">✕</button>
+            </div>
+          </div>
+          <div class="tactical-map-body">
+            <canvas id="tactical-map-canvas" width="600" height="600"></canvas>
+            <div class="tactical-map-legend">
+              <div class="legend-item"><span class="legend-icon player-icon">▲</span> You (Vision Cone)</div>
+              <div class="legend-item"><span class="legend-dot bot-dot"></span> Enemy Bot</div>
+              <div class="legend-item"><span class="legend-badge site-a">A</span> A Site</div>
+              <div class="legend-item"><span class="legend-badge site-b">B</span> B Site</div>
+              <div class="legend-hint">Press <b>[M]</b> to Toggle · Click to Ping · Shift+Click to Teleport</div>
+            </div>
           </div>
         </div>
       </div>

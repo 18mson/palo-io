@@ -1107,8 +1107,20 @@ export class PlayerController {
         this.gunMesh.add(customGroup)
         if (arms) this.gunMesh.add(arms)
 
-        this.magMesh = customGroup.getObjectByName('mag') || customGroup.getObjectByName('magazine') || null
-        this.boltMesh = customGroup.getObjectByName('bolt') || customGroup.getObjectByName('slide') || null
+        // Find reload components inside the loaded custom hierarchy
+        let foundMag = null
+        let foundBolt = null
+        customGroup.traverse(c => {
+          if (!foundMag && /mag|magazine/i.test(c.name)) foundMag = c
+          if (!foundBolt && /bolt|slide|cock/i.test(c.name)) foundBolt = c
+        })
+        this.magMesh = foundMag
+        this.boltMesh = foundBolt
+        if (this.magMesh) this.magBasePos = this.magMesh.position.clone()
+        if (this.boltMesh) {
+          this.boltBasePos = this.boltMesh.position.clone()
+          this.boltBaseRot = this.boltMesh.rotation.clone()
+        }
         this.coverMesh = customGroup.getObjectByName('cover') || null
         this.shellMesh = customGroup.getObjectByName('shell') || null
 
@@ -1658,15 +1670,42 @@ export class PlayerController {
       this.velocity.x += (targetVx - this.velocity.x) * Math.min(1, delta * accel)
       this.velocity.z += (targetVz - this.velocity.z) * Math.min(1, delta * accel)
 
-      // Valorant Jump (fixed height, no bunny-hop speed spam)
-      if (this.keys.space && this.onGround && !this.isCrouched) {
-        sounds.playJump()
-        this.velocity.y = JUMP_FORCE
-        this.onGround = false
+      // Ladder Climbing Mechanics
+      const ladders = this.collision?.getLadders?.() || []
+      let onLadder = false
+      const footY = this.position.y - 0.45
+      const headY = this.position.y + 0.45
+
+      for (let i = 0; i < ladders.length; i++) {
+        const lad = ladders[i]
+        const dx = Math.abs(this.position.x - lad.x)
+        const dz = Math.abs(this.position.z - lad.z)
+        const reach = (lad.width || 0.8) / 2 + 0.5
+        if (dx <= reach && dz <= reach && footY <= (lad.y1 + 0.4) && headY >= (lad.y0 - 0.2)) {
+          onLadder = true
+          break
+        }
       }
 
-      if (!this.onGround) {
-        this.velocity.y += GRAVITY * delta
+      if (onLadder) {
+        let climbSpeed = 0
+        if (this.keys.w || this.keys.space) climbSpeed += 3.5
+        if (this.keys.s) climbSpeed -= 3.5
+        this.velocity.y = climbSpeed
+        this.velocity.x *= 0.5
+        this.velocity.z *= 0.5
+        this.onGround = true
+      } else {
+        // Valorant Jump (fixed height, no bunny-hop speed spam)
+        if (this.keys.space && this.onGround && !this.isCrouched) {
+          sounds.playJump()
+          this.velocity.y = JUMP_FORCE
+          this.onGround = false
+        }
+
+        if (!this.onGround) {
+          this.velocity.y += GRAVITY * delta
+        }
       }
 
       const prevYVel = this.velocity.y
@@ -1697,7 +1736,13 @@ export class PlayerController {
       // Camera world position is now 100% updated and settled for this frame!
       const eyeHeight = 0.72 - (this.crouchProgress * 0.40)
       this.camera.position.x = this.position.x
-      this.camera.position.y = this.position.y + eyeHeight
+      const targetCamY = this.position.y + eyeHeight
+      if (this.onGround && Math.abs(targetCamY - this.camera.position.y) <= 0.45 && !this.isNoclip) {
+        // Silky smooth dampening for step-up curbs, stairs, and floor seams
+        this.camera.position.y = THREE.MathUtils.damp(this.camera.position.y, targetCamY, 30, delta)
+      } else {
+        this.camera.position.y = targetCamY
+      }
       this.camera.position.z = this.position.z
       this.keys.space = false
     }

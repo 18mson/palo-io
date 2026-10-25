@@ -5,292 +5,4543 @@
   "fogColor": "#b8dcfa",
   "fogNear": 160,
   "fogFar": 450,
-  "ambientIntensity": 1.30,
+  "ambientIntensity": 1.3,
   "ambientColor": "#fff5e6",
   "sunIntensity": 1.75,
   "sunColor": "#fff8ee",
   "spawn": [
-    [0, 0.9, -46],
-    [-8, 0.9, -46],
-    [8, 0.9, -46],
-    [0, 0.9, 46],
-    [-8, 0.9, 46],
-    [8, 0.9, 46],
-    [0, 4.35, 0],
-    [-6, 4.35, 0],
-    [6, 4.35, 0],
-    [0, 0.5, -8],
-    [0, 0.5, 8],
-    [-32, 0.9, -4],
-    [-38, 0.9, -4],
-    [-32, 0.9, 6],
-    [-44, 4.7, -4],
-    [-28, 0.9, -24],
-    [-42, 0.9, -26],
-    [-36, 0.9, -16],
-    [32, 0.9, -4],
-    [38, 0.9, -4],
-    [32, 0.9, 6],
-    [40, 4.3, 14],
-    [28, 0.9, -24],
-    [42, 0.9, -26],
-    [36, 0.9, -16],
-    [-9.5, 2.7, -13],
-    [42, 1.85, -8],
-    [-18, 0.9, -4],
-    [18, 0.9, -4],
-    [-18, 0.9, 18],
-    [18, 0.9, 18],
-    [-32, 0.9, 32],
-    [32, 0.9, 32],
-    [-14, 0.9, 42],
-    [14, 0.9, 42],
-    [-24, 0.9, 12],
-    [24, 0.9, 12],
-    [0, 0.9, -28]
+    [
+      11.5,
+      1,
+      -50
+    ],
+    [
+      7.5,
+      1,
+      -50
+    ],
+    [
+      15.5,
+      1,
+      -50
+    ],
+    [
+      10.5,
+      1,
+      44
+    ],
+    [
+      6.5,
+      1,
+      44
+    ],
+    [
+      14.5,
+      1,
+      44
+    ],
+    [
+      12,
+      4.5,
+      0
+    ],
+    [
+      6,
+      4.5,
+      0
+    ],
+    [
+      18,
+      4.5,
+      0
+    ],
+    [
+      12,
+      0.5,
+      -8
+    ],
+    [
+      12,
+      0.5,
+      8
+    ],
+    [
+      -35,
+      1,
+      -1.5
+    ],
+    [
+      -38,
+      1,
+      -4
+    ],
+    [
+      -32,
+      1,
+      6
+    ],
+    [
+      -44,
+      4.5,
+      -1.5
+    ],
+    [
+      -28,
+      1,
+      -24
+    ],
+    [
+      -42,
+      1,
+      -26
+    ],
+    [
+      -36,
+      1,
+      -16
+    ],
+    [
+      43.5,
+      1,
+      0
+    ],
+    [
+      38,
+      1,
+      -4
+    ],
+    [
+      48,
+      1,
+      6
+    ],
+    [
+      43.5,
+      4.5,
+      13
+    ],
+    [
+      28,
+      1,
+      -24
+    ],
+    [
+      42,
+      1,
+      -26
+    ],
+    [
+      36,
+      1,
+      -16
+    ],
+    [
+      -9.5,
+      2.5,
+      -13
+    ],
+    [
+      42,
+      2,
+      -8
+    ],
+    [
+      -18,
+      1,
+      -4
+    ],
+    [
+      18,
+      1,
+      -4
+    ],
+    [
+      -18,
+      1,
+      18
+    ],
+    [
+      18,
+      1,
+      18
+    ],
+    [
+      -32,
+      1,
+      32
+    ],
+    [
+      32,
+      1,
+      32
+    ],
+    [
+      -14,
+      1,
+      42
+    ],
+    [
+      14,
+      1,
+      42
+    ],
+    [
+      -24,
+      1,
+      12
+    ],
+    [
+      24,
+      1,
+      12
+    ],
+    [
+      11.5,
+      1,
+      -28
+    ]
+  ],
+  "zones": [
+    {
+      "id": "attackerSpawn",
+      "name": "Attacker Spawn",
+      "minX": 3.5,
+      "maxX": 19.5,
+      "minZ": -55,
+      "maxZ": -45,
+      "y": 1,
+      "key": "["
+    },
+    {
+      "id": "defenderSpawn",
+      "name": "Defender Spawn",
+      "minX": 2.5,
+      "maxX": 18.5,
+      "minZ": 38,
+      "maxZ": 50,
+      "y": 1,
+      "key": "]"
+    },
+    {
+      "id": "midCanal",
+      "name": "Mid Canal",
+      "minX": 7.5,
+      "maxX": 16.5,
+      "minZ": -21,
+      "maxZ": 21,
+      "y": 0.5,
+      "key": "7"
+    },
+    {
+      "id": "midCourtyard",
+      "name": "Mid Courtyard",
+      "minX": 0,
+      "maxX": 24,
+      "minZ": -22,
+      "maxZ": 22,
+      "y": 1,
+      "key": "5"
+    },
+    {
+      "id": "aHeaven",
+      "name": "A Heaven",
+      "minX": -52,
+      "maxX": -36,
+      "minZ": -9.5,
+      "maxZ": 6.5,
+      "minY": 3,
+      "maxY": 10,
+      "y": 4.5,
+      "key": "2"
+    },
+    {
+      "id": "aHell",
+      "name": "A Hell",
+      "minX": -52,
+      "maxX": -36,
+      "minZ": -9.5,
+      "maxZ": 6.5,
+      "minY": -2,
+      "maxY": 3,
+      "y": 1,
+      "key": "3"
+    },
+    {
+      "id": "siteA",
+      "name": "A Site",
+      "minX": -47,
+      "maxX": -23,
+      "minZ": -15.5,
+      "maxZ": 12.5,
+      "y": 1,
+      "key": "1"
+    },
+    {
+      "id": "bHeaven",
+      "name": "B Heaven",
+      "minX": 37,
+      "maxX": 50,
+      "minZ": 7,
+      "maxZ": 19,
+      "minY": 3,
+      "maxY": 10,
+      "y": 4.5,
+      "key": "9"
+    },
+    {
+      "id": "bHell",
+      "name": "B Hell",
+      "minX": 37,
+      "maxX": 50,
+      "minZ": 7,
+      "maxZ": 19,
+      "minY": -2,
+      "maxY": 3,
+      "y": 1,
+      "key": "0"
+    },
+    {
+      "id": "siteB",
+      "name": "B Site",
+      "minX": 32,
+      "maxX": 55,
+      "minZ": -13,
+      "maxZ": 13,
+      "y": 1,
+      "key": "8"
+    },
+    {
+      "id": "westAlley",
+      "name": "West Alley",
+      "minX": -42,
+      "maxX": -26,
+      "minZ": 14,
+      "maxZ": 36,
+      "y": 1,
+      "key": "-"
+    },
+    {
+      "id": "eastAlley",
+      "name": "East Alley",
+      "minX": 26,
+      "maxX": 42,
+      "minZ": 14,
+      "maxZ": 36,
+      "y": 1,
+      "key": "="
+    }
+  ],
+  "props": [
+    {
+      "type": "tree",
+      "x": -6.5,
+      "y": 0,
+      "z": -25
+    },
+    {
+      "type": "planter",
+      "x": -6.5,
+      "y": 0.35,
+      "z": -25,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "tree",
+      "x": 8,
+      "y": 0,
+      "z": -14
+    },
+    {
+      "type": "planter",
+      "x": 8,
+      "y": 0.35,
+      "z": -14,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "tree",
+      "x": 8,
+      "y": 0,
+      "z": 14
+    },
+    {
+      "type": "planter",
+      "x": 8,
+      "y": 0.35,
+      "z": 14,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "tree",
+      "x": 26,
+      "y": 0,
+      "z": -20
+    },
+    {
+      "type": "planter",
+      "x": 26,
+      "y": 0.35,
+      "z": -20,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "tree",
+      "x": 38,
+      "y": 0,
+      "z": -20
+    },
+    {
+      "type": "planter",
+      "x": 38,
+      "y": 0.35,
+      "z": -20,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "tree",
+      "x": -38,
+      "y": 0,
+      "z": -12
+    },
+    {
+      "type": "planter",
+      "x": -38,
+      "y": 0.35,
+      "z": -12,
+      "w": 1.6,
+      "h": 0.7,
+      "d": 1.6
+    },
+    {
+      "type": "lantern",
+      "x": -7.5,
+      "y": 4.1,
+      "z": -2.3
+    },
+    {
+      "type": "lantern",
+      "x": 7.5,
+      "y": 4.1,
+      "z": -2.3
+    },
+    {
+      "type": "lantern",
+      "x": -7.5,
+      "y": 4.1,
+      "z": 2.3
+    },
+    {
+      "type": "lantern",
+      "x": 7.5,
+      "y": 4.1,
+      "z": 2.3
+    },
+    {
+      "type": "lantern",
+      "x": -9,
+      "y": 4.5,
+      "z": -46
+    },
+    {
+      "type": "lantern",
+      "x": 9,
+      "y": 4.5,
+      "z": -46
+    },
+    {
+      "type": "lantern",
+      "x": -9,
+      "y": 4.5,
+      "z": 46
+    },
+    {
+      "type": "lantern",
+      "x": 9,
+      "y": 4.5,
+      "z": 46
+    },
+    {
+      "type": "lantern",
+      "x": 42,
+      "y": 8,
+      "z": 10
+    },
+    {
+      "type": "lantern",
+      "x": 42,
+      "y": 8,
+      "z": 18
+    },
+    {
+      "type": "crate",
+      "x": -34,
+      "y": 0.75,
+      "z": -8,
+      "w": 1.5,
+      "h": 1.5,
+      "d": 1.5,
+      "crateType": "box"
+    },
+    {
+      "type": "crate",
+      "x": 34,
+      "y": 0.75,
+      "z": -10,
+      "w": 1.5,
+      "h": 1.5,
+      "d": 1.5,
+      "crateType": "radianite"
+    },
+    {
+      "type": "bush",
+      "x": -10,
+      "y": 0.5,
+      "z": -25,
+      "radius": 0.8
+    },
+    {
+      "type": "bush",
+      "x": 10,
+      "y": 0.5,
+      "z": 25,
+      "radius": 0.8
+    },
+    {
+      "type": "banner",
+      "x": 0,
+      "y": 4,
+      "z": -45,
+      "ry": 0,
+      "w": 1.5,
+      "h": 2.5
+    },
+    {
+      "type": "banner",
+      "x": 0,
+      "y": 4,
+      "z": 45,
+      "ry": 3.14159,
+      "w": 1.5,
+      "h": 2.5
+    },
+    {
+      "type": "ivy",
+      "x": -50.8,
+      "y": 3,
+      "z": 0,
+      "ry": 1.5708,
+      "w": 3,
+      "h": 4
+    },
+    {
+      "type": "ivy",
+      "x": 46.8,
+      "y": 3,
+      "z": 0,
+      "ry": -1.5708,
+      "w": 3,
+      "h": 4
+    }
   ],
   "blocks": [
-    { "comment": "=== 1. VAST GROUND PAVEMENT (110x110m) ===" },
-    { "x": 0, "y": -0.5, "z": 0, "w": 130, "h": 1, "d": 130, "type": "ground" },
-
-    { "comment": "=== 2. OUTER PERIMETER BOUNDARY WALLS (H=11m) ===" },
-    { "x": 0, "y": 5.0, "z": -58, "w": 120, "h": 11, "d": 2, "type": "wall" },
-    { "x": 0, "y": 5.0, "z": 58, "w": 120, "h": 11, "d": 2, "type": "wall" },
-    { "x": -58, "y": 5.0, "z": 0, "w": 2, "h": 11, "d": 120, "type": "wall" },
-    { "x": 58, "y": 5.0, "z": 0, "w": 2, "h": 11, "d": 120, "type": "wall" },
-
-    { "comment": "=== 3. ATTACKER SPAWN (NORTH PAVILION, Z=-46) ===" },
-    { "comment": "Attacker Grand Stone Plinth & Flooring" },
-    { "x": 0, "y": 0.25, "z": -46, "w": 22, "h": 0.5, "d": 16, "type": "accent_stone" },
-    { "comment": "Attacker Pavilion Cedar Pillars" },
-    { "x": -9, "y": 2.5, "z": -52, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": 9, "y": 2.5, "z": -52, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": -9, "y": 2.5, "z": -40, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": 9, "y": 2.5, "z": -40, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "comment": "Attacker Pavilion Architrave Beams & Asian Roof" },
-    { "x": 0, "y": 5.2, "z": -46, "w": 24, "h": 0.8, "d": 18, "type": "pagoda_wood" },
-    { "x": 0, "y": 6.4, "z": -46, "w": 26, "h": 1.6, "d": 20, "type": "asian_roof" },
-    { "comment": "Attacker Flank Exits Barriers" },
-    { "x": -16, "y": 3.0, "z": -46, "w": 8, "h": 6.0, "d": 2.0, "type": "wall" },
-    { "x": 16, "y": 3.0, "z": -46, "w": 8, "h": 6.0, "d": 2.0, "type": "wall" },
-    { "comment": "Attacker Spawn Exit Smooth Ramp (Turunan Halus Menuju Mid)" },
-    { "isRamp": true, "minX": -4.0, "maxX": 4.0, "minZ": -38.0, "maxZ": -32.0, "startY": 0.5, "endY": 0.15, "axis": "z", "type": "accent_stone" },
-
-    { "comment": "=== 4. DEFENDER SPAWN (SOUTH PAVILION, Z=+46) ===" },
-    { "comment": "Defender Raised Stone Plinth" },
-    { "x": 0, "y": 0.25, "z": 46, "w": 22, "h": 0.5, "d": 16, "type": "accent_stone" },
-    { "comment": "Defender Pavilion Pillars" },
-    { "x": -9, "y": 2.5, "z": 40, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": 9, "y": 2.5, "z": 40, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": -9, "y": 2.5, "z": 52, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "x": 9, "y": 2.5, "z": 52, "w": 1.2, "h": 5.0, "d": 1.2, "type": "pagoda_wood" },
-    { "comment": "Defender Architrave & Roof" },
-    { "x": 0, "y": 5.2, "z": 46, "w": 24, "h": 0.8, "d": 18, "type": "pagoda_wood" },
-    { "x": 0, "y": 6.4, "z": 46, "w": 26, "h": 1.6, "d": 20, "type": "asian_roof" },
-    { "comment": "Defender Flank Walls" },
-    { "x": -16, "y": 3.0, "z": 46, "w": 8, "h": 6.0, "d": 2.0, "type": "wall" },
-    { "x": 16, "y": 3.0, "z": 46, "w": 8, "h": 6.0, "d": 2.0, "type": "wall" },
-    { "comment": "Defender Spawn Exit Smooth Ramp (Turunan Halus Menuju Mid)" },
-    { "isRamp": true, "minX": -4.0, "maxX": 4.0, "minZ": 32.0, "maxZ": 38.0, "startY": 0.15, "endY": 0.5, "axis": "z", "type": "accent_stone" },
-
-    { "comment": "=== 5. CENTRAL MID WATER CANAL (LEVEL 0: SUNKEN TRENCH Y=0.0-0.15m) ===" },
-    { "comment": "Canal Bed Excavation Stone Base" },
-    { "x": 0, "y": -0.2, "z": 0, "w": 9.0, "h": 0.4, "d": 42, "type": "cobble" },
-    { "comment": "Shimmering Turquoise Water Body" },
-    { "x": 0, "y": 0.15, "z": 0, "w": 8.6, "h": 0.25, "d": 41.6, "type": "water" },
-    { "comment": "Canal West Retaining Stone Wall" },
-    { "x": -4.6, "y": 0.6, "z": 0, "w": 0.8, "h": 1.4, "d": 42, "type": "accent_stone" },
-    { "comment": "Canal East Retaining Stone Wall" },
-    { "x": 4.6, "y": 0.6, "z": 0, "w": 0.8, "h": 1.4, "d": 42, "type": "accent_stone" },
-
-    { "comment": "Canal North Slipway Ramp (Turunan Batu Mulus ke Kanal Air)" },
-    { "isRamp": true, "minX": -3.5, "maxX": 3.5, "minZ": -22.0, "maxZ": -16.0, "startY": 0.85, "endY": 0.15, "axis": "z", "type": "accent_stone" },
-    { "comment": "Canal South Slipway Ramp (Turunan Batu Mulus ke Kanal Air)" },
-    { "isRamp": true, "minX": -3.5, "maxX": 3.5, "minZ": 16.0, "maxZ": 22.0, "startY": 0.15, "endY": 0.85, "axis": "z", "type": "accent_stone" },
-
-    { "comment": "Canal Jump-Out Tactical Crates (Step out of water directly up to Courtyard)" },
-    { "x": -3.8, "y": 0.55, "z": 0, "w": 1.4, "h": 1.0, "d": 1.4, "type": "box" },
-    { "x": 3.8, "y": 0.55, "z": 0, "w": 1.4, "h": 1.0, "d": 1.4, "type": "box" },
-
-    { "comment": "=== 6. CENTRAL ELEVATED MID BRIDGE (LEVEL 2: HIGH GROUND Y=3.45m WITH UNDERPASS) ===" },
-    { "comment": "Bridge Deck Plank Span (L=18m, W=4.6m, H=0.5m, Underpass Clearance=2.8m)" },
-    { "x": 0, "y": 3.2, "z": 0, "w": 18.0, "h": 0.5, "d": 4.6, "type": "pagoda_wood" },
-    { "comment": "Bridge Support Piers (Pilar Kayu di Tepi Kanal)" },
-    { "x": -4.8, "y": 1.6, "z": -1.8, "w": 1.0, "h": 3.2, "d": 1.0, "type": "pagoda_wood" },
-    { "x": -4.8, "y": 1.6, "z": 1.8, "w": 1.0, "h": 3.2, "d": 1.0, "type": "pagoda_wood" },
-    { "x": 4.8, "y": 1.6, "z": -1.8, "w": 1.0, "h": 3.2, "d": 1.0, "type": "pagoda_wood" },
-    { "x": 4.8, "y": 1.6, "z": 1.8, "w": 1.0, "h": 3.2, "d": 1.0, "type": "pagoda_wood" },
-    { "comment": "Bridge Protective Wooden Railings" },
-    { "x": 0, "y": 3.85, "z": -2.15, "w": 18.0, "h": 0.8, "d": 0.25, "type": "pagoda_wood" },
-    { "x": 0, "y": 3.85, "z": 2.15, "w": 18.0, "h": 0.8, "d": 0.25, "type": "pagoda_wood" },
-
-    { "comment": "Mid Bridge West Ramp Incline (Tanjakan Kayu Halus ke Jembatan Mid)" },
-    { "isRamp": true, "minX": -17.0, "maxX": -9.0, "minZ": -2.3, "maxZ": 2.3, "startY": 0.5, "endY": 3.2, "axis": "x", "type": "pagoda_wood" },
-    { "comment": "Mid Bridge East Ramp Decline (Turunan Kayu Halus dari Jembatan Mid)" },
-    { "isRamp": true, "minX": 9.0, "maxX": 17.0, "minZ": -2.3, "maxZ": 2.3, "startY": 3.2, "endY": 0.5, "axis": "x", "type": "pagoda_wood" },
-    { "comment": "Mid Bridge Ramp Base Pedestals" },
-    { "x": -17.2, "y": 0.8, "z": -2.3, "w": 0.8, "h": 1.6, "d": 0.8, "type": "pagoda_wood" },
-    { "x": -17.2, "y": 0.8, "z": 2.3, "w": 0.8, "h": 1.6, "d": 0.8, "type": "pagoda_wood" },
-    { "x": 17.2, "y": 0.8, "z": -2.3, "w": 0.8, "h": 1.6, "d": 0.8, "type": "pagoda_wood" },
-    { "x": 17.2, "y": 0.8, "z": 2.3, "w": 0.8, "h": 1.6, "d": 0.8, "type": "pagoda_wood" },
-
-    { "comment": "=== 7. MID CATWALK (LEVEL 1: ELEVATED TERRACE Y=1.8m TO A SHORT) ===" },
-    { "comment": "Mid Catwalk Stone Deck" },
-    { "x": -9.5, "y": 1.6, "z": -13.0, "w": 4.2, "h": 0.4, "d": 13.0, "type": "accent_stone" },
-    { "comment": "Catwalk Incline Ramp from Top Mid" },
-    { "isRamp": true, "minX": -11.6, "maxX": -7.4, "minZ": -24.0, "maxZ": -19.5, "startY": 0.5, "endY": 1.8, "axis": "z", "type": "accent_stone" },
-    { "comment": "Catwalk Balustrade Overlooking Mid Courtyard" },
-    { "x": -7.3, "y": 2.2, "z": -13.0, "w": 0.25, "h": 0.8, "d": 13.0, "type": "pagoda_wood" },
-    { "comment": "Catwalk to Mid Bridge Connection Ramp" },
-    { "isRamp": true, "minX": -11.6, "maxX": -7.4, "minZ": -6.5, "maxZ": -2.3, "startY": 1.8, "endY": 3.2, "axis": "z", "type": "pagoda_wood" },
-
-    { "comment": "=== 8. MID SURROUNDING BUILDINGS & MARKET WINDOW ===" },
-    { "comment": "Mid West Flank Building (Connecting A Lobby)" },
-    { "x": -18, "y": 4.0, "z": -12, "w": 8, "h": 8, "d": 14, "type": "wall" },
-    { "x": -18, "y": 8.5, "z": -12, "w": 9, "h": 1.5, "d": 15, "type": "asian_roof" },
-    { "x": -18, "y": 4.0, "z": 12, "w": 8, "h": 8, "d": 14, "type": "wall" },
-    { "x": -18, "y": 8.5, "z": 12, "w": 9, "h": 1.5, "d": 15, "type": "asian_roof" },
-
-    { "comment": "Mid East Flank Building & Market (Connecting B Lobby)" },
-    { "x": 18, "y": 4.0, "z": -12, "w": 8, "h": 8, "d": 14, "type": "wall" },
-    { "x": 18, "y": 8.5, "z": -12, "w": 9, "h": 1.5, "d": 15, "type": "asian_roof" },
-    { "x": 18, "y": 4.0, "z": 12, "w": 8, "h": 8, "d": 14, "type": "wall" },
-    { "x": 18, "y": 8.5, "z": 12, "w": 9, "h": 1.5, "d": 15, "type": "asian_roof" },
-
-    { "comment": "Mid Market Elevated Platform (Pizza / Market Doorway Y=1.4m)" },
-    { "x": 13.5, "y": 0.7, "z": 0, "w": 3.0, "h": 1.4, "d": 6.0, "type": "cobble" },
-    { "isRamp": true, "minX": 10.0, "maxX": 12.0, "minZ": -3.0, "maxZ": 3.0, "startY": 0.5, "endY": 1.4, "axis": "x", "type": "accent_stone" },
-
-    { "comment": "Mid Courtyard Jumpable Crates" },
-    { "x": -7, "y": 0.6, "z": -6, "w": 1.8, "h": 1.1, "d": 1.8, "type": "box" },
-    { "x": -7, "y": 1.55, "z": -6, "w": 1.4, "h": 1.0, "d": 1.4, "type": "radianite" },
-    { "x": 7, "y": 0.6, "z": 6, "w": 1.8, "h": 1.1, "d": 1.8, "type": "box" },
-    { "x": 7, "y": 1.55, "z": 6, "w": 1.4, "h": 1.0, "d": 1.4, "type": "box" },
-    { "x": 0, "y": 4.2, "z": 0, "w": 1.4, "h": 1.4, "d": 1.4, "type": "radianite" },
-
-    { "comment": "=== 9. A SITE (TWO-TIER VERTICALITY: A HELL & A HEAVEN BALCONY) ===" },
-    { "comment": "A Site Stone Plaza Base" },
-    { "x": -34, "y": 0.15, "z": -4, "w": 26, "h": 0.3, "d": 28, "type": "accent_stone" },
-    { "comment": "A Site Plant Zone Circle Inlay" },
-    { "x": -34, "y": 0.32, "z": -4, "w": 11, "h": 0.05, "d": 11, "type": "site_a" },
-
-    { "comment": "A Water Basin / Moat (Beside A Site)" },
-    { "x": -24, "y": -0.1, "z": 8, "w": 10, "h": 0.4, "d": 12, "type": "cobble" },
-    { "x": -24, "y": 0.12, "z": 8, "w": 9.2, "h": 0.2, "d": 11.2, "type": "water" },
-    { "x": -24, "y": 0.45, "z": 14.2, "w": 10.4, "h": 0.6, "d": 0.8, "type": "accent_stone" },
-    { "x": -24, "y": 0.45, "z": 1.8, "w": 10.4, "h": 0.6, "d": 0.8, "type": "accent_stone" },
-
-    { "comment": "A TOWER TIER 1: A HELL (SHELTERED GROUND FLOOR ROOM Y=0.15 - 3.6m)" },
-    { "comment": "Hell Back Wall (West)" },
-    { "x": -51, "y": 1.8, "z": -4, "w": 0.8, "h": 3.6, "d": 16, "type": "brick" },
-    { "comment": "Hell North Wall" },
-    { "x": -46, "y": 1.8, "z": -12, "w": 10, "h": 3.6, "d": 0.8, "type": "brick" },
-    { "comment": "Hell South Wall" },
-    { "x": -46, "y": 1.8, "z": 4, "w": 10, "h": 3.6, "d": 0.8, "type": "brick" },
-    { "comment": "Hell Interior Stone Floor" },
-    { "x": -46, "y": 0.15, "z": -4, "w": 10, "h": 0.3, "d": 16, "type": "accent_stone" },
-
-    { "comment": "A TOWER TIER 2: A HEAVEN & RAFTERS BALCONY (HIGH GROUND Y=3.8m)" },
-    { "comment": "A Heaven Floor Slab (Walkable surface at Y=3.8m, ceiling over Hell)" },
-    { "x": -46, "y": 3.6, "z": -4, "w": 10, "h": 0.4, "d": 16, "type": "pagoda_wood" },
-    { "comment": "A Heaven Sniper Balcony Front Railing" },
-    { "x": -41.2, "y": 4.25, "z": -4, "w": 0.3, "h": 0.9, "d": 14, "type": "pagoda_wood" },
-    { "comment": "A Heaven Upper Back Wall" },
-    { "x": -51, "y": 5.8, "z": -4, "w": 0.8, "h": 4.0, "d": 16, "type": "brick" },
-    { "comment": "A Heaven Upper North Wall" },
-    { "x": -46, "y": 5.8, "z": -12, "w": 10, "h": 4.0, "d": 0.8, "type": "brick" },
-    { "comment": "A Heaven Upper South Wall" },
-    { "x": -46, "y": 5.8, "z": 4, "w": 10, "h": 4.0, "d": 0.8, "type": "brick" },
-    { "comment": "A Heaven Asian Pagoda Roof Eaves" },
-    { "x": -46, "y": 8.0, "z": -4, "w": 12, "h": 1.4, "d": 18, "type": "asian_roof" },
-
-    { "comment": "A Heaven Access Incline Ramp & Stairs (From A Link to Heaven Y=0.5 -> 3.6m)" },
-    { "isRamp": true, "minX": -50.0, "maxX": -46.0, "minZ": 4.0, "maxZ": 12.0, "startY": 3.6, "endY": 0.5, "axis": "z", "type": "accent_stone" },
-
-    { "comment": "A Site Generator (A Gen: Jumpable Tiered High Ground Stack)" },
-    { "comment": "Gen Step-Up Box (Y=1.15m)" },
-    { "x": -30, "y": 0.6, "z": -14, "w": 1.6, "h": 1.1, "d": 1.6, "type": "box" },
-    { "comment": "Gen Main Generator Body (Y=2.45m - Jumpable from Step-Up Box)" },
-    { "x": -32.5, "y": 1.25, "z": -14, "w": 3.2, "h": 2.4, "d": 2.4, "type": "radianite" },
-
-    { "comment": "A Site Dice / Green Boxes (Double Crate Stack)" },
-    { "comment": "Lower Crate (Y=1.15m)" },
-    { "x": -32, "y": 0.6, "z": -8, "w": 1.6, "h": 1.1, "d": 1.6, "type": "box" },
-    { "comment": "Upper Double Crate (Y=2.35m)" },
-    { "x": -32, "y": 1.25, "z": -6.2, "w": 1.6, "h": 2.4, "d": 1.8, "type": "box" },
-
-    { "comment": "A Wine / A Main Sunken Nook & Cover" },
-    { "x": -46, "y": 0.6, "z": -22, "w": 4.0, "h": 1.1, "d": 0.8, "type": "brick" },
-    { "comment": "A Main Entry Gateway & Corridor" },
-    { "isRamp": true, "minX": -44.0, "maxX": -36.0, "minZ": -20.0, "maxZ": -14.0, "startY": 0.05, "endY": 0.35, "axis": "z", "type": "accent_stone" },
-    { "x": -34, "y": 4.0, "z": -28, "w": 0.8, "h": 8.0, "d": 20, "type": "wall" },
-    { "x": -46, "y": 4.0, "z": -28, "w": 0.8, "h": 8.0, "d": 20, "type": "wall" },
-    { "x": -40, "y": 7.5, "z": -22, "w": 12, "h": 1.2, "d": 2.0, "type": "asian_roof" },
-
-    { "comment": "=== 10. B SITE (TWO-TIER VERTICALITY: B HELL, B HEAVEN & RAISED BACKSITE) ===" },
-    { "comment": "B Site Stone Plaza Base" },
-    { "x": 34, "y": 0.15, "z": -4, "w": 26, "h": 0.3, "d": 28, "type": "cobble" },
-    { "comment": "B Site Plant Zone Inlay" },
-    { "x": 34, "y": 0.32, "z": -4, "w": 11, "h": 0.05, "d": 11, "type": "site_b" },
-
-    { "comment": "B TOWER TIER 1: B HELL (GROUND FLOOR UNDER WINDOW Y=0.15 - 3.2m)" },
-    { "comment": "Hell Back Wall" },
-    { "x": 47, "y": 1.6, "z": 14, "w": 0.8, "h": 3.2, "d": 9.0, "type": "brick" },
-    { "comment": "Hell North Wall" },
-    { "x": 42, "y": 1.6, "z": 9.5, "w": 10.0, "h": 3.2, "d": 0.8, "type": "brick" },
-    { "comment": "Hell South Wall" },
-    { "x": 42, "y": 1.6, "z": 18.5, "w": 10.0, "h": 3.2, "d": 0.8, "type": "brick" },
-    { "comment": "Hell Floor" },
-    { "x": 42, "y": 0.15, "z": 14, "w": 10.0, "h": 0.3, "d": 9.0, "type": "cobble" },
-
-    { "comment": "B TOWER TIER 2: B HEAVEN (UPPER SNIPER WINDOW Y=3.4m)" },
-    { "comment": "B Heaven Floor Slab (Surface at Y=3.4m)" },
-    { "x": 42, "y": 3.2, "z": 14, "w": 9.0, "h": 0.4, "d": 9.0, "type": "pagoda_wood" },
-    { "comment": "B Heaven Window Balustrade Facing Site B" },
-    { "x": 37.6, "y": 3.85, "z": 14, "w": 0.3, "h": 0.9, "d": 7.0, "type": "pagoda_wood" },
-    { "comment": "B Heaven Upper Walls" },
-    { "x": 46.5, "y": 5.2, "z": 14, "w": 0.8, "h": 3.6, "d": 9.0, "type": "brick" },
-    { "x": 42, "y": 5.2, "z": 9.5, "w": 9.0, "h": 3.6, "d": 0.8, "type": "brick" },
-    { "x": 42, "y": 5.2, "z": 18.5, "w": 9.0, "h": 3.6, "d": 0.8, "type": "brick" },
-    { "comment": "Pagoda Roof Tier 1" },
-    { "x": 42, "y": 7.2, "z": 14, "w": 10.5, "h": 0.9, "d": 10.5, "type": "asian_roof" },
-
-    { "comment": "B Pagoda Tower Spire & Upper Eaves" },
-    { "x": 42, "y": 9.0, "z": 14, "w": 6.5, "h": 3.0, "d": 6.5, "type": "pagoda_wood" },
-    { "x": 42, "y": 10.8, "z": 14, "w": 8.0, "h": 1.2, "d": 8.0, "type": "asian_roof" },
-
-    { "comment": "B Heaven Access Stairs (Ramp/Stairs from Defender Backsite Y=0.5 -> 3.2m)" },
-    { "isRamp": true, "minX": 35.0, "maxX": 39.0, "minZ": 18.5, "maxZ": 26.0, "startY": 3.2, "endY": 0.5, "axis": "z", "type": "stairs_wood" },
-
-    { "comment": "B Backsite Raised Deck (Level Y=0.95m Elevated Defense Hold)" },
-    { "x": 42, "y": 0.75, "z": -8, "w": 8.0, "h": 0.4, "d": 12, "type": "pagoda_wood" },
-    { "isRamp": true, "minX": 35.0, "maxX": 38.0, "minZ": -14.0, "maxZ": -2.0, "startY": 0.15, "endY": 0.95, "axis": "x", "type": "accent_stone" },
-    { "comment": "Backsite Cover Crates on Raised Deck" },
-    { "x": 42, "y": 1.7, "z": -8, "w": 2.0, "h": 1.5, "d": 2.0, "type": "box" },
-
-    { "comment": "B Site Triple Box (Default Jump-Stack Cover)" },
-    { "x": 34, "y": 0.65, "z": -4, "w": 2.6, "h": 1.1, "d": 2.6, "type": "radianite" },
-    { "x": 34, "y": 1.75, "z": -4, "w": 1.8, "h": 1.1, "d": 1.8, "type": "box" },
-    { "x": 26, "y": 0.6, "z": 2, "w": 2.0, "h": 1.1, "d": 2.0, "type": "box" },
-    { "x": 26, "y": 1.65, "z": 2, "w": 1.6, "h": 1.0, "d": 1.6, "type": "box" },
-
-    { "comment": "B Main Entry Gateway & Corridor" },
-    { "isRamp": true, "minX": 36.0, "maxX": 44.0, "minZ": -20.0, "maxZ": -14.0, "startY": 0.05, "endY": 0.35, "axis": "z", "type": "cobble" },
-    { "x": 34, "y": 4.0, "z": -28, "w": 0.8, "h": 8.0, "d": 20, "type": "wall" },
-    { "x": 46, "y": 4.0, "z": -28, "w": 0.8, "h": 8.0, "d": 20, "type": "wall" },
-    { "x": 40, "y": 7.5, "z": -22, "w": 12, "h": 1.2, "d": 2.0, "type": "asian_roof" },
-
-    { "comment": "=== 11. FLANK CORRIDORS & ALLEYWAYS (EAST & WEST) ===" },
-    { "comment": "West Alley / Flank Route" },
-    { "x": -28, "y": 3.5, "z": 24, "w": 0.8, "h": 7.0, "d": 24, "type": "wall" },
-    { "x": -38, "y": 3.5, "z": 24, "w": 0.8, "h": 7.0, "d": 24, "type": "wall" },
-    { "x": -33, "y": 0.15, "z": 24, "w": 9.2, "h": 0.3, "d": 24, "type": "cobble" },
-    { "x": -33, "y": 0.6, "z": 24, "w": 2.0, "h": 1.1, "d": 2.0, "type": "box" },
-
-    { "comment": "East Alley / Flank Route" },
-    { "x": 28, "y": 3.5, "z": 24, "w": 0.8, "h": 7.0, "d": 24, "type": "wall" },
-    { "x": 38, "y": 3.5, "z": 24, "w": 0.8, "h": 7.0, "d": 24, "type": "wall" },
-    { "x": 33, "y": 0.15, "z": 24, "w": 9.2, "h": 0.3, "d": 24, "type": "cobble" },
-    { "x": 33, "y": 0.6, "z": 24, "w": 2.0, "h": 1.1, "d": 2.0, "type": "box" }
+    {
+      "comment": "=== 1. VAST GROUND PAVEMENT (110x110m) ==="
+    },
+    {
+      "x": 0,
+      "y": -0.5,
+      "z": 0,
+      "w": 160,
+      "h": 1,
+      "d": 160,
+      "type": "ground"
+    },
+    {
+      "comment": "=== 2. OUTER PERIMETER BOUNDARY WALLS (H=11m, [-55, 55]) ==="
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "z": -56,
+      "w": 114,
+      "h": 11,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "z": 56,
+      "w": 114,
+      "h": 11,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "x": -56,
+      "y": 5,
+      "z": 0,
+      "w": 2,
+      "h": 11,
+      "d": 114,
+      "type": "wall"
+    },
+    {
+      "x": 56,
+      "y": 5,
+      "z": 0,
+      "w": 2,
+      "h": 11,
+      "d": 114,
+      "type": "wall"
+    },
+    {
+      "comment": "=== 3. ATTACKER SPAWN (NORTH PAVILION, Z=-46) ==="
+    },
+    {
+      "comment": "Attacker Grand Stone Plinth & Flooring"
+    },
+    {
+      "x": 0,
+      "y": 0.25,
+      "z": -46,
+      "w": 22,
+      "h": 0.5,
+      "d": 16,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "Attacker Pavilion Cedar Pillars"
+    },
+    {
+      "x": -9,
+      "y": 2.5,
+      "z": -52,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 9,
+      "y": 2.5,
+      "z": -52,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": -9,
+      "y": 2.5,
+      "z": -40,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 9,
+      "y": 2.5,
+      "z": -40,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "Attacker Pavilion Architrave Beams & Asian Roof"
+    },
+    {
+      "x": 0,
+      "y": 5.2,
+      "z": -46,
+      "w": 24,
+      "h": 0.8,
+      "d": 18,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 0,
+      "y": 6.4,
+      "z": -46,
+      "w": 26,
+      "h": 1.6,
+      "d": 20,
+      "type": "asian_roof"
+    },
+    {
+      "comment": "Attacker Flank Exits Barriers"
+    },
+    {
+      "x": -16,
+      "y": 3,
+      "z": -46,
+      "w": 8,
+      "h": 6,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "x": 16,
+      "y": 3,
+      "z": -46,
+      "w": 8,
+      "h": 6,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "comment": "Attacker Spawn Exit Smooth Ramp (Turunan Halus Menuju Mid)"
+    },
+    {
+      "isRamp": true,
+      "minX": -4,
+      "maxX": 4,
+      "minZ": -38,
+      "maxZ": -32,
+      "startY": 0.5,
+      "endY": 0,
+      "axis": "z",
+      "type": "accent_stone"
+    },
+    {
+      "comment": "=== 4. DEFENDER SPAWN (SOUTH PAVILION, Z=+46) ==="
+    },
+    {
+      "comment": "Defender Raised Stone Plinth"
+    },
+    {
+      "x": 0,
+      "y": 0.25,
+      "z": 46,
+      "w": 22,
+      "h": 0.5,
+      "d": 16,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "Defender Pavilion Pillars"
+    },
+    {
+      "x": -9,
+      "y": 2.5,
+      "z": 40,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 9,
+      "y": 2.5,
+      "z": 40,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": -9,
+      "y": 2.5,
+      "z": 52,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 9,
+      "y": 2.5,
+      "z": 52,
+      "w": 1.2,
+      "h": 5,
+      "d": 1.2,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "Defender Architrave & Roof"
+    },
+    {
+      "x": 0,
+      "y": 5.2,
+      "z": 46,
+      "w": 24,
+      "h": 0.8,
+      "d": 18,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 0,
+      "y": 6.4,
+      "z": 46,
+      "w": 26,
+      "h": 1.6,
+      "d": 20,
+      "type": "asian_roof"
+    },
+    {
+      "comment": "Defender Flank Walls"
+    },
+    {
+      "x": -16,
+      "y": 3,
+      "z": 46,
+      "w": 8,
+      "h": 6,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "x": 16,
+      "y": 3,
+      "z": 46,
+      "w": 8,
+      "h": 6,
+      "d": 2,
+      "type": "wall"
+    },
+    {
+      "comment": "Defender Spawn Exit Smooth Ramp (Turunan Halus Menuju Mid)"
+    },
+    {
+      "isRamp": true,
+      "minX": -4,
+      "maxX": 4,
+      "minZ": 32,
+      "maxZ": 38,
+      "startY": 0,
+      "endY": 0.5,
+      "axis": "z",
+      "type": "accent_stone"
+    },
+    {
+      "comment": "=== 5. CENTRAL MID WATER CANAL & LOWER WALKWAY (LEVEL 0 & 0.5) ==="
+    },
+    {
+      "comment": "Canal Bed Excavation Stone Base"
+    },
+    {
+      "comment": "Shimmering Turquoise Water Body (Water level Y=0.0)"
+    },
+    {
+      "comment": "Canal West Retaining Stone Wall (Height 1.0m, top Y=1.0)"
+    },
+    {
+      "comment": "Canal East Retaining Stone Wall (Height 1.0m, top Y=1.0)"
+    },
+    {
+      "comment": "Canal Retaining Wall Stone Coping Caps (Fix 2: Raised Coping Borders)"
+    },
+    {
+      "comment": "Canal North Slipway Stairs (Descending into Water from Top Mid)"
+    },
+    {
+      "macro": "stairs",
+      "id": "canal_north_stairs",
+      "zone": "midCanal",
+      "minX": -2.5,
+      "maxX": 2.5,
+      "minZ": -24,
+      "maxZ": -20,
+      "startY": 0.5,
+      "endY": 0,
+      "axis": "z",
+      "steps": 2,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "Canal South Slipway Stairs (Ascending from Water to Bottom Mid)"
+    },
+    {
+      "macro": "stairs",
+      "id": "canal_south_stairs",
+      "zone": "midCanal",
+      "minX": -2.5,
+      "maxX": 2.5,
+      "minZ": 20,
+      "maxZ": 24,
+      "startY": 0,
+      "endY": 0.5,
+      "axis": "z",
+      "steps": 2,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "Lower Walkway Beside Canal (West side of canal retaining wall)"
+    },
+    {
+      "comment": "Stairs from Lower Walkway up to West Catwalk"
+    },
+    {
+      "comment": "=== 6. CENTRAL ELEVATED MID WOODEN BRIDGE (LEVEL 2: HIGH GROUND Y=3.5m) ==="
+    },
+    {
+      "comment": "Bridge Deck Plank Span (16m span, 4m wide, clearance 3.25m)"
+    },
+    {
+      "comment": "Bridge Support Piers in Canal (Heavy Cedar Timbers)"
+    },
+    {
+      "comment": "Bridge Arch Underpass Bracket Timbers (Fix 1: Authentic Arch Curvature Frame)"
+    },
+    {
+      "comment": "Bridge Protective Wooden Railings (North & South)"
+    },
+    {
+      "comment": "Bridge East Access Stairs (From Courtyard Level Y=0.5m up to Bridge Y=3.5m)"
+    },
+    {
+      "comment": "West Catwalk Bridge Landing Transition Platform (Fix 5: Continuous Walkway Connection)"
+    },
+    {
+      "comment": "Bridge West Access Stairs (From Catwalk Y=2.0m up to Bridge Y=3.5m)"
+    },
+    {
+      "comment": "=== 7. MID CATWALK & WEST SHOPS (LEVEL 1: Y=2.0m & EXIT TO A) ==="
+    },
+    {
+      "comment": "Catwalk Raised Stone Deck"
+    },
+    {
+      "comment": "Catwalk Safety Balustrade Overlooking Courtyard"
+    },
+    {
+      "comment": "Stairs from Top Mid up to Catwalk"
+    },
+    {
+      "macro": "stairs",
+      "id": "catwalk_north_stairs",
+      "zone": "midCourtyard",
+      "minX": -13,
+      "maxX": -8,
+      "minZ": -22,
+      "maxZ": -16,
+      "startY": 0.5,
+      "endY": 2,
+      "axis": "z",
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "West Shops Building Façade - Exit Toward A (wallWithDoor macro, 3.5m wide doorway)"
+    },
+    {
+      "comment": "West Shops South Wall (wallWithDoor macro to Courtyard Flank)"
+    },
+    {
+      "comment": "West Second-Story Balcony Overlooking Walkway"
+    },
+    {
+      "comment": "West Overhanging Asian Pagoda Stepped Roof Eaves"
+    },
+    {
+      "comment": "=== 8. MID COURTYARD PLAZA & EAST MARKET (EXIT TO B & SPAWNS) ==="
+    },
+    {
+      "comment": "East Courtyard Cobblestone Plaza"
+    },
+    {
+      "comment": "East Market North Wall - Exit Toward B (wallWithDoor macro, 3.5m wide doorway)"
+    },
+    {
+      "comment": "East Market Famous Market Window Recess & Awning"
+    },
+    {
+      "comment": "Market Window Fabric Striped Awning (Kit Awning)"
+    },
+    {
+      "comment": "East Market South Wall (wallWithDoor macro into Pizza corridor)"
+    },
+    {
+      "comment": "East Second-Story Balcony Overlooking Courtyard"
+    },
+    {
+      "comment": "East Overhanging Asian Pagoda Stepped Roof Eaves"
+    },
+    {
+      "comment": "North Canal Vista Pagoda Watchtower Gateway (North Spawn Exit to Mid)"
+    },
+    {
+      "macro": "wallWithDoor",
+      "id": "mid_north_tower_gate",
+      "zone": "midCourtyard",
+      "facade": true,
+      "x": 0,
+      "z": -28,
+      "length": 8,
+      "height": 6,
+      "axis": "x",
+      "doorWidth": 4,
+      "doorOffset": 0,
+      "doorHeight": 4,
+      "thickness": 1,
+      "type": "pagoda_wood"
+    },
+    {
+      "macro": "pillarPair",
+      "id": "mid_north_gateway_pillars",
+      "zone": "midCourtyard",
+      "x": 0,
+      "y": 0.5,
+      "z": -26,
+      "height": 5,
+      "spacing": 5,
+      "axis": "x",
+      "type": "accent_stone",
+      "capType": "pagoda_wood"
+    },
+    {
+      "x": 0,
+      "y": 6,
+      "z": -28,
+      "w": 7,
+      "h": 0.5,
+      "d": 5,
+      "type": "pagoda_wood",
+      "zone": "midCourtyard"
+    },
+    {
+      "macro": "roofEave",
+      "id": "mid_north_lower_eave",
+      "zone": "midCourtyard",
+      "x": 0,
+      "y": 6.5,
+      "z": -28,
+      "length": 8,
+      "depth": 3,
+      "steps": 3,
+      "stepHeight": 0.5,
+      "axis": "x",
+      "facing": 1,
+      "roofType": "asian_roof",
+      "trimType": "pagoda_wood"
+    },
+    {
+      "x": 0,
+      "y": 9,
+      "z": -28,
+      "w": 4,
+      "h": 3,
+      "d": 4,
+      "type": "pagoda_wood",
+      "zone": "midCourtyard"
+    },
+    {
+      "comment": "Watchtower Upper Window (Fix 3: Architectural Depth Framing North Vista)"
+    },
+    {
+      "macro": "window",
+      "id": "mid_north_tower_window",
+      "zone": "midCourtyard",
+      "x": 0,
+      "y": 9,
+      "z": -28,
+      "w": 2,
+      "h": 2,
+      "axis": "x"
+    },
+    {
+      "macro": "roofEave",
+      "id": "mid_north_upper_eave",
+      "zone": "midCourtyard",
+      "x": 0,
+      "y": 10.5,
+      "z": -28,
+      "length": 5,
+      "depth": 2.5,
+      "steps": 3,
+      "stepHeight": 0.5,
+      "axis": "x",
+      "facing": 1,
+      "roofType": "asian_roof",
+      "trimType": "pagoda_wood"
+    },
+    {
+      "comment": "Courtyard Tactical Cover Objects & Planter Decor"
+    },
+    {
+      "comment": "Cover 1: East Courtyard Jump-Boost Radianite Stack (Kit crateStack)"
+    },
+    {
+      "comment": "Cover 2: Courtyard North Double Box Cover (Kit crateStack)"
+    },
+    {
+      "comment": "Cover 3: West Catwalk Flank Cover Box Stack (Kit crateStack)"
+    },
+    {
+      "comment": "Mid Walkway & Courtyard Planter Boxes (Kit planterBox)"
+    },
+    {
+      "comment": "Courtyard Stone Bollards Barrier"
+    },
+    {
+      "macro": "repeat",
+      "id": "courtyard_bollards",
+      "zone": "midCourtyard",
+      "count": 3,
+      "dx": 2.5,
+      "dy": 0,
+      "dz": 0,
+      "block": {
+        "x": 6,
+        "y": 0.5,
+        "z": -12,
+        "w": 0.5,
+        "h": 1,
+        "d": 0.5,
+        "type": "accent_stone"
+      }
+    },
+    {
+      "comment": "=== 9. A SITE (TWO-TIER VERTICALITY: A HELL & A HEAVEN BALCONY) ==="
+    },
+    {
+      "comment": "A Site Stone Plaza Base"
+    },
+    {
+      "x": -34,
+      "y": 0.15,
+      "z": -4,
+      "w": 26,
+      "h": 0.3,
+      "d": 28,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "A Site Plant Zone Circle Inlay"
+    },
+    {
+      "x": -34,
+      "y": 0.32,
+      "z": -4,
+      "w": 11,
+      "h": 0.05,
+      "d": 11,
+      "type": "site_a"
+    },
+    {
+      "comment": "A Water Basin / Moat (Beside A Site)"
+    },
+    {
+      "x": -24,
+      "y": -0.1,
+      "z": 8,
+      "w": 10,
+      "h": 0.4,
+      "d": 12,
+      "type": "cobble"
+    },
+    {
+      "x": -24,
+      "y": 0.12,
+      "z": 8,
+      "w": 9.2,
+      "h": 0.2,
+      "d": 11.2,
+      "type": "water"
+    },
+    {
+      "x": -24,
+      "y": 0.45,
+      "z": 14.2,
+      "w": 10.4,
+      "h": 0.6,
+      "d": 0.8,
+      "type": "accent_stone"
+    },
+    {
+      "x": -24,
+      "y": 0.45,
+      "z": 1.8,
+      "w": 10.4,
+      "h": 0.6,
+      "d": 0.8,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "planterBox",
+      "id": "a_site_water_planter_north",
+      "zone": "siteA",
+      "x": -26,
+      "y": 0.5,
+      "z": 14.2,
+      "w": 2.5,
+      "d": 0.8,
+      "h": 0.8,
+      "boxType": "accent_stone",
+      "foliageType": "ivy"
+    },
+    {
+      "macro": "planterBox",
+      "id": "a_site_water_planter_south",
+      "zone": "siteA",
+      "x": -26,
+      "y": 0.5,
+      "z": 1.8,
+      "w": 2.5,
+      "d": 0.8,
+      "h": 0.8,
+      "boxType": "accent_stone",
+      "foliageType": "ivy"
+    },
+    {
+      "comment": "A TOWER TIER 1: A HELL (SHELTERED GROUND FLOOR ROOM Y=0.15 - 3.6m)"
+    },
+    {
+      "comment": "Hell Back Wall (West)"
+    },
+    {
+      "x": -51,
+      "y": 1.8,
+      "z": -4,
+      "w": 0.8,
+      "h": 3.6,
+      "d": 16,
+      "type": "brick",
+      "facade": true
+    },
+    {
+      "comment": "Hell North Wall"
+    },
+    {
+      "x": -46,
+      "y": 1.8,
+      "z": -12,
+      "w": 10,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick",
+      "facade": true
+    },
+    {
+      "comment": "Hell South Wall with 3.0m Wide Tactical Throughway Door (Pintu Tembus 2 Arah)"
+    },
+    {
+      "x": -48,
+      "y": 1.8,
+      "z": 4,
+      "w": 6,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": -41.5,
+      "y": 1.8,
+      "z": 4,
+      "w": 1,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": -43.5,
+      "y": 3.1,
+      "z": 4,
+      "w": 3,
+      "h": 1,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "macro": "doorFrame",
+      "id": "a_hell_south_door_frame",
+      "zone": "aHell",
+      "x": -43.5,
+      "y": 0.2,
+      "z": 4,
+      "doorWidth": 3,
+      "doorHeight": 2.8,
+      "depth": 0.8,
+      "axis": "x",
+      "frameType": "pagoda_wood",
+      "thresholdType": "accent_stone"
+    },
+    {
+      "macro": "awning",
+      "id": "a_link_awning",
+      "zone": "siteA",
+      "x": -41,
+      "y": 3.4,
+      "z": 4,
+      "width": 3,
+      "depth": 1.5,
+      "axis": "x",
+      "facing": 1,
+      "steps": 3,
+      "awningType": "awning"
+    },
+    {
+      "comment": "Hell Interior Stone Floor"
+    },
+    {
+      "x": -49,
+      "y": 0.15,
+      "z": -4,
+      "w": 4,
+      "h": 0.3,
+      "d": 16,
+      "type": "accent_stone"
+    },
+    {
+      "comment": "A TOWER TIER 2: A HEAVEN & RAFTERS BALCONY (HIGH GROUND Y=3.8m)"
+    },
+    {
+      "comment": "A Heaven Floor Slab (Walkable surface at Y=3.8m, ceiling over Hell)"
+    },
+    {
+      "x": -46,
+      "y": 3.6,
+      "z": -4,
+      "w": 9.2,
+      "h": 0.4,
+      "d": 15,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "A Heaven Sniper Balcony Front Railing & Corbel Brackets (Kit balcony)"
+    },
+    {
+      "macro": "balcony",
+      "id": "a_heaven_sniper_balcony",
+      "zone": "aHeaven",
+      "hasSideRailings": false,
+      "x": -43,
+      "y": 3.8,
+      "z": -4,
+      "w": 14,
+      "d": 3,
+      "h": 1,
+      "axis": "z",
+      "facing": 1,
+      "deckType": "pagoda_wood",
+      "railingType": "pagoda_wood",
+      "bracketType": "accent_stone"
+    },
+    {
+      "comment": "A Heaven Upper Back Wall"
+    },
+    {
+      "x": -51,
+      "y": 5.8,
+      "z": -4,
+      "w": 0.8,
+      "h": 4,
+      "d": 16,
+      "type": "brick",
+      "facade": true
+    },
+    {
+      "comment": "A Heaven Upper North Wall"
+    },
+    {
+      "x": -46,
+      "y": 5.8,
+      "z": -12,
+      "w": 10,
+      "h": 4,
+      "d": 0.8,
+      "type": "brick",
+      "facade": true
+    },
+    {
+      "comment": "A Heaven Upper South Wall with 3.0m Wide Grand Archway / Doorway"
+    },
+    {
+      "x": -50.25,
+      "y": 5.8,
+      "z": 4,
+      "w": 1.5,
+      "h": 4,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": -43.75,
+      "y": 5.8,
+      "z": 4,
+      "w": 5.5,
+      "h": 4,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": -48,
+      "y": 7.1,
+      "z": 4,
+      "w": 3,
+      "h": 1.4,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "comment": "A Heaven Asian Pagoda Stepped Roof Eaves (Kit roofEave)"
+    },
+    {
+      "macro": "roofEave",
+      "id": "a_heaven_pagoda_roof_eave",
+      "zone": "aHeaven",
+      "x": -44,
+      "y": 7.5,
+      "z": -4,
+      "length": 16,
+      "depth": 3.5,
+      "steps": 3,
+      "stepHeight": 0.5,
+      "axis": "z",
+      "facing": 1,
+      "roofType": "asian_roof",
+      "trimType": "pagoda_wood"
+    },
+    {
+      "comment": "A Heaven Skybridge & Landing from Ramp (Penghubung Lebar Tanjakan ke Ruangan Y=3.8m)"
+    },
+    {
+      "x": -48,
+      "y": 3.6,
+      "z": 4.25,
+      "w": 4.5,
+      "h": 0.4,
+      "d": 1.5,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "A Heaven Skybridge Outer Safety Railing"
+    },
+    {
+      "x": -45.65,
+      "y": 4.25,
+      "z": 4.25,
+      "w": 0.3,
+      "h": 0.9,
+      "d": 1.5,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "A Heaven Access Incline Ramp & Stairs (From A Link to Heaven Y=0.0 -> 3.8m)"
+    },
+    {
+      "isRamp": true,
+      "minX": -50,
+      "maxX": -46,
+      "minZ": 4,
+      "maxZ": 12,
+      "startY": 3.8,
+      "endY": 0,
+      "axis": "z",
+      "type": "accent_stone"
+    },
+    {
+      "comment": "A Site Generator (A Gen: Jumpable Tiered High Ground Stack via Kit crateStack)"
+    },
+    {
+      "macro": "crateStack",
+      "id": "a_site_gen_stack",
+      "zone": "siteA",
+      "x": -32.5,
+      "y": 0.2,
+      "z": -14,
+      "style": "radianite_stack",
+      "size": 1.8,
+      "primaryType": "box",
+      "secondaryType": "radianite"
+    },
+    {
+      "comment": "A Site Dice / Green Boxes (Double Crate Stack via Kit crateStack)"
+    },
+    {
+      "macro": "crateStack",
+      "id": "a_site_dice_boxes",
+      "zone": "siteA",
+      "x": -32,
+      "y": 0.2,
+      "z": -7,
+      "style": "double",
+      "size": 1.6,
+      "primaryType": "box"
+    },
+    {
+      "comment": "A Wine / A Main Sunken Nook & Cover"
+    },
+    {
+      "x": -46,
+      "y": 0.6,
+      "z": -22,
+      "w": 4,
+      "h": 1.1,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "macro": "crateStack",
+      "id": "a_site_wine_cover",
+      "zone": "siteA",
+      "x": -46,
+      "y": 0.2,
+      "z": -22,
+      "style": "corner",
+      "size": 1.4,
+      "primaryType": "box"
+    },
+    {
+      "macro": "planterBox",
+      "id": "a_site_wine_planter",
+      "zone": "siteA",
+      "x": -44,
+      "y": 0.5,
+      "z": -24,
+      "w": 2,
+      "d": 1,
+      "h": 0.8,
+      "boxType": "accent_stone",
+      "foliageType": "ivy"
+    },
+    {
+      "comment": "A Main Entry Gateway & Corridor"
+    },
+    {
+      "isRamp": true,
+      "minX": -44,
+      "maxX": -36,
+      "minZ": -20,
+      "maxZ": -14,
+      "startY": 0,
+      "endY": 0.35,
+      "axis": "z",
+      "type": "accent_stone"
+    },
+    {
+      "x": -34,
+      "y": 4,
+      "z": -28,
+      "w": 0.8,
+      "h": 8,
+      "d": 20,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "x": -46,
+      "y": 4,
+      "z": -28,
+      "w": 0.8,
+      "h": 8,
+      "d": 20,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "macro": "pillarPair",
+      "id": "a_main_gateway_pillars",
+      "zone": "siteA",
+      "x": -40,
+      "y": 0.5,
+      "z": -18,
+      "height": 6,
+      "spacing": 6,
+      "axis": "x",
+      "pillarWidth": 0.8,
+      "pillarDepth": 0.8,
+      "type": "accent_stone",
+      "capType": "pagoda_wood"
+    },
+    {
+      "macro": "roofEave",
+      "id": "a_main_entry_roof_eave",
+      "zone": "siteA",
+      "x": -40,
+      "y": 7.5,
+      "z": -22,
+      "length": 12,
+      "depth": 2.5,
+      "steps": 3,
+      "stepHeight": 0.5,
+      "axis": "x",
+      "facing": 1,
+      "roofType": "asian_roof",
+      "trimType": "pagoda_wood"
+    },
+    {
+      "comment": "=== 10. B SITE (TWO-TIER VERTICALITY: B HELL, B HEAVEN & RAISED BACKSITE) ==="
+    },
+    {
+      "comment": "B Site Stone Plaza Base"
+    },
+    {
+      "x": 34,
+      "y": 0.15,
+      "z": -4,
+      "w": 26,
+      "h": 0.3,
+      "d": 28,
+      "type": "cobble"
+    },
+    {
+      "comment": "B Site Plant Zone Inlay"
+    },
+    {
+      "x": 34,
+      "y": 0.32,
+      "z": -4,
+      "w": 11,
+      "h": 0.05,
+      "d": 11,
+      "type": "site_b"
+    },
+    {
+      "comment": "B TOWER TIER 1: B HELL (GROUND FLOOR UNDER WINDOW Y=0.15 - 3.2m)"
+    },
+    {
+      "comment": "Hell Back Wall"
+    },
+    {
+      "x": 47,
+      "y": 1.6,
+      "z": 14,
+      "w": 0.8,
+      "h": 3.2,
+      "d": 9,
+      "type": "brick"
+    },
+    {
+      "comment": "Hell North Wall"
+    },
+    {
+      "x": 42,
+      "y": 1.6,
+      "z": 9.5,
+      "w": 10,
+      "h": 3.2,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "comment": "Hell South Wall with 4.0m Wide Tactical Throughway Door (Pintu Tembus 2 Arah)"
+    },
+    {
+      "x": 39,
+      "y": 1.6,
+      "z": 18.5,
+      "w": 3,
+      "h": 3.2,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": 45.5,
+      "y": 1.6,
+      "z": 18.5,
+      "w": 2,
+      "h": 3.2,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": 42.5,
+      "y": 2.8,
+      "z": 18.5,
+      "w": 4,
+      "h": 0.8,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "comment": "Hell South Doorway Stone Inlay Floor"
+    },
+    {
+      "x": 42.5,
+      "y": 0.15,
+      "z": 19,
+      "w": 4,
+      "h": 0.3,
+      "d": 1,
+      "type": "cobble"
+    },
+    {
+      "comment": "Hell Floor"
+    },
+    {
+      "x": 42.3,
+      "y": 0.15,
+      "z": 14.25,
+      "w": 9.4,
+      "h": 0.3,
+      "d": 8.5,
+      "type": "cobble"
+    },
+    {
+      "comment": "B TOWER TIER 2: B HEAVEN (UPPER SNIPER WINDOW Y=3.4m)"
+    },
+    {
+      "comment": "B Heaven Floor Slab (Surface at Y=3.4m)"
+    },
+    {
+      "x": 42,
+      "y": 3.2,
+      "z": 14,
+      "w": 9,
+      "h": 0.4,
+      "d": 9,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "B Heaven Window Balustrade Facing Site B"
+    },
+    {
+      "x": 37.6,
+      "y": 3.85,
+      "z": 14,
+      "w": 0.3,
+      "h": 0.9,
+      "d": 7,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "B Heaven Upper Walls"
+    },
+    {
+      "x": 46.5,
+      "y": 5.2,
+      "z": 14,
+      "w": 0.8,
+      "h": 3.6,
+      "d": 9,
+      "type": "brick"
+    },
+    {
+      "x": 42,
+      "y": 5.2,
+      "z": 9.5,
+      "w": 9,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "comment": "B Heaven Upper South Wall with 4.0m Wide Grand Archway / Doorway"
+    },
+    {
+      "x": 39,
+      "y": 5.2,
+      "z": 18.5,
+      "w": 3,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": 45.5,
+      "y": 5.2,
+      "z": 18.5,
+      "w": 2,
+      "h": 3.6,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "x": 42.5,
+      "y": 6.4,
+      "z": 18.5,
+      "w": 4,
+      "h": 1.2,
+      "d": 0.8,
+      "type": "brick"
+    },
+    {
+      "comment": "Pagoda Roof Tier 1"
+    },
+    {
+      "x": 42,
+      "y": 7.2,
+      "z": 14,
+      "w": 10.5,
+      "h": 0.9,
+      "d": 10.5,
+      "type": "asian_roof"
+    },
+    {
+      "comment": "B Pagoda Tower Spire & Upper Eaves"
+    },
+    {
+      "x": 42,
+      "y": 9,
+      "z": 14,
+      "w": 6.5,
+      "h": 3,
+      "d": 6.5,
+      "type": "pagoda_wood"
+    },
+    {
+      "x": 42,
+      "y": 10.8,
+      "z": 14,
+      "w": 8,
+      "h": 1.2,
+      "d": 8,
+      "type": "asian_roof"
+    },
+    {
+      "comment": "B Heaven Skybridge & Landing from Ramp (Penghubung Lebar Tanjakan ke Ruangan Y=3.4m)"
+    },
+    {
+      "x": 42.5,
+      "y": 3.2,
+      "z": 19,
+      "w": 4.5,
+      "h": 0.4,
+      "d": 1,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "B Heaven Skybridge Outer Safety Railing"
+    },
+    {
+      "x": 40.15,
+      "y": 3.85,
+      "z": 19,
+      "w": 0.3,
+      "h": 0.9,
+      "d": 1,
+      "type": "pagoda_wood"
+    },
+    {
+      "comment": "B Heaven Access Stairs (Ramp/Stairs from Defender Backsite Y=0.0 -> 3.4m)"
+    },
+    {
+      "isRamp": true,
+      "minX": 40.5,
+      "maxX": 44.5,
+      "minZ": 19.5,
+      "maxZ": 27,
+      "startY": 3.4,
+      "endY": 0,
+      "axis": "z",
+      "type": "stairs_wood"
+    },
+    {
+      "comment": "B Backsite Raised Deck (Level Y=0.95m Elevated Defense Hold)"
+    },
+    {
+      "x": 42,
+      "y": 0.75,
+      "z": -8,
+      "w": 8,
+      "h": 0.4,
+      "d": 12,
+      "type": "pagoda_wood"
+    },
+    {
+      "isRamp": true,
+      "minX": 35,
+      "maxX": 38,
+      "minZ": -14,
+      "maxZ": -2,
+      "startY": 0,
+      "endY": 0.95,
+      "axis": "x",
+      "type": "accent_stone"
+    },
+    {
+      "comment": "Backsite Cover Crates on Raised Deck"
+    },
+    {
+      "x": 42,
+      "y": 1.7,
+      "z": -8,
+      "w": 2,
+      "h": 1.5,
+      "d": 2,
+      "type": "box"
+    },
+    {
+      "comment": "B Site Triple Box (Default Jump-Stack Cover)"
+    },
+    {
+      "x": 34,
+      "y": 0.65,
+      "z": -4,
+      "w": 2.6,
+      "h": 1.1,
+      "d": 2.6,
+      "type": "radianite"
+    },
+    {
+      "x": 34,
+      "y": 1.75,
+      "z": -4,
+      "w": 1.8,
+      "h": 1.1,
+      "d": 1.8,
+      "type": "box"
+    },
+    {
+      "x": 26,
+      "y": 0.6,
+      "z": 2,
+      "w": 2,
+      "h": 1.1,
+      "d": 2,
+      "type": "box"
+    },
+    {
+      "x": 26,
+      "y": 1.65,
+      "z": 2,
+      "w": 1.6,
+      "h": 1,
+      "d": 1.6,
+      "type": "box"
+    },
+    {
+      "comment": "B Main Entry Gateway & Corridor"
+    },
+    {
+      "isRamp": true,
+      "minX": 36,
+      "maxX": 44,
+      "minZ": -20,
+      "maxZ": -14,
+      "startY": 0,
+      "endY": 0.35,
+      "axis": "z",
+      "type": "cobble"
+    },
+    {
+      "x": 34,
+      "y": 4,
+      "z": -28,
+      "w": 0.8,
+      "h": 8,
+      "d": 20,
+      "type": "wall"
+    },
+    {
+      "x": 46,
+      "y": 4,
+      "z": -28,
+      "w": 0.8,
+      "h": 8,
+      "d": 20,
+      "type": "wall"
+    },
+    {
+      "x": 40,
+      "y": 7.5,
+      "z": -22,
+      "w": 12,
+      "h": 1.2,
+      "d": 2,
+      "type": "asian_roof"
+    },
+    {
+      "comment": "=== 11. FLANK CORRIDORS & ALLEYWAYS (EAST & WEST) ==="
+    },
+    {
+      "comment": "West Alley / Flank Route"
+    },
+    {
+      "x": -28,
+      "y": 3.5,
+      "z": 24,
+      "w": 0.8,
+      "h": 7,
+      "d": 24,
+      "type": "wall"
+    },
+    {
+      "x": -38,
+      "y": 3.5,
+      "z": 24,
+      "w": 0.8,
+      "h": 7,
+      "d": 24,
+      "type": "wall"
+    },
+    {
+      "x": -33,
+      "y": 0.15,
+      "z": 24,
+      "w": 9.2,
+      "h": 0.3,
+      "d": 24,
+      "type": "cobble"
+    },
+    {
+      "x": -33,
+      "y": 0.6,
+      "z": 24,
+      "w": 2,
+      "h": 1.1,
+      "d": 2,
+      "type": "box"
+    },
+    {
+      "comment": "East Alley / Flank Route"
+    },
+    {
+      "x": 28,
+      "y": 3.5,
+      "z": 24,
+      "w": 0.8,
+      "h": 7,
+      "d": 24,
+      "type": "wall",
+      "zone": "eastAlley"
+    },
+    {
+      "x": 38,
+      "y": 3.5,
+      "z": 24,
+      "w": 0.8,
+      "h": 7,
+      "d": 24,
+      "type": "wall",
+      "zone": "eastAlley"
+    },
+    {
+      "x": 33,
+      "y": 0.15,
+      "z": 24,
+      "w": 9.2,
+      "h": 0.3,
+      "d": 24,
+      "type": "cobble",
+      "zone": "eastAlley"
+    },
+    {
+      "x": 33,
+      "y": 0.6,
+      "z": 24,
+      "w": 2,
+      "h": 1.1,
+      "d": 2,
+      "type": "box",
+      "zone": "eastAlley"
+    },
+    {
+      "comment": "=== 12. ARCHITECTURAL MACROS (DOORS, WINDOWS, STAIRS, LADDERS) ==="
+    },
+    {
+      "macro": "ladder",
+      "id": "a_heaven_ladder",
+      "zone": "aHeaven",
+      "x": -50.5,
+      "z": 3.5,
+      "y0": 0,
+      "y1": 3.5,
+      "facing": "north"
+    },
+    {
+      "macro": "wallWithDoor",
+      "id": "west_flank_gate",
+      "zone": "westAlley",
+      "x": -33,
+      "z": 36,
+      "length": 10,
+      "height": 4,
+      "axis": "x",
+      "doorWidth": 3,
+      "doorOffset": 0,
+      "type": "wall"
+    },
+    {
+      "id": "c_room_tower_nw_wall_n_seg_0",
+      "source": "layout",
+      "x": -14,
+      "y": 2.5,
+      "z": -18,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_wall_s_seg_0",
+      "source": "layout",
+      "x": -14,
+      "y": 2.5,
+      "z": -13,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_wall_w_seg_0",
+      "source": "layout",
+      "x": -15.5,
+      "y": 2.5,
+      "z": -15.5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_wall_e_seg_0",
+      "source": "layout",
+      "x": -12.5,
+      "y": 2.5,
+      "z": -17,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_wall_e_lintel_1",
+      "source": "layout",
+      "x": -12.5,
+      "y": 4,
+      "z": -15.5,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_wall_e_seg_2",
+      "source": "layout",
+      "x": -12.5,
+      "y": 2.5,
+      "z": -14,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_tower_nw_floor",
+      "source": "layout",
+      "x": -14,
+      "y": -0.5,
+      "z": -15.5,
+      "w": 2,
+      "h": 1,
+      "d": 4,
+      "type": "cobble"
+    },
+    {
+      "id": "c_room_wine_cellar_wall_n_seg_0",
+      "source": "layout",
+      "x": -18.5,
+      "y": 2.5,
+      "z": -12.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_wall_s_seg_0",
+      "source": "layout",
+      "x": -18.5,
+      "y": 2.5,
+      "z": -6.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_wall_w_seg_0",
+      "source": "layout",
+      "x": -19.5,
+      "y": 2.5,
+      "z": -9.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_wall_e_seg_0",
+      "source": "layout",
+      "x": -17.5,
+      "y": 2.5,
+      "z": -11,
+      "w": 1,
+      "h": 5,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_wall_e_lintel_1",
+      "source": "layout",
+      "x": -17.5,
+      "y": 4,
+      "z": -9,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_wall_e_seg_2",
+      "source": "layout",
+      "x": -17.5,
+      "y": 2.5,
+      "z": -7.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_wine_cellar_floor",
+      "source": "layout",
+      "x": -18.5,
+      "y": -0.5,
+      "z": -9.5,
+      "w": 1,
+      "h": 1,
+      "d": 5,
+      "type": "cobble"
+    },
+    {
+      "id": "c_room_a_back_wall_wall_n_seg_0",
+      "source": "layout",
+      "x": -18,
+      "y": 2.5,
+      "z": 0.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_wall_s_seg_0",
+      "source": "layout",
+      "x": -18,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_wall_w_seg_0",
+      "source": "layout",
+      "x": -19.5,
+      "y": 2.5,
+      "z": 8,
+      "w": 1,
+      "h": 5,
+      "d": 14,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_wall_e_seg_0",
+      "source": "layout",
+      "x": -16.5,
+      "y": 2.5,
+      "z": 4,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_wall_e_lintel_1",
+      "source": "layout",
+      "x": -16.5,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_wall_e_seg_2",
+      "source": "layout",
+      "x": -16.5,
+      "y": 2.5,
+      "z": 12,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_a_back_wall_floor",
+      "source": "layout",
+      "x": -18,
+      "y": -0.5,
+      "z": 8,
+      "w": 2,
+      "h": 1,
+      "d": 14,
+      "type": "cobble"
+    },
+    {
+      "id": "c_room_north_mid_wall_n_seg_0",
+      "source": "layout",
+      "x": -2,
+      "y": 2.5,
+      "z": -15.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_n_lintel_1",
+      "source": "layout",
+      "x": 0,
+      "y": 4,
+      "z": -15.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_n_seg_2",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": -15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_s_seg_0",
+      "source": "layout",
+      "x": -2,
+      "y": 2.5,
+      "z": -9.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_s_lintel_1",
+      "source": "layout",
+      "x": 0,
+      "y": 4,
+      "z": -9.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_s_seg_2",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": -9.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_w_seg_0",
+      "source": "layout",
+      "x": -2.5,
+      "y": 2.5,
+      "z": -12.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_wall_e_seg_0",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": -12.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_north_mid_floor",
+      "source": "layout",
+      "x": -0.5,
+      "y": -0.5,
+      "z": -12.5,
+      "w": 3,
+      "h": 1,
+      "d": 5,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_n_seg_0",
+      "source": "layout",
+      "x": -4,
+      "y": 2.5,
+      "z": -1.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_s_seg_0",
+      "source": "layout",
+      "x": -4,
+      "y": 2.5,
+      "z": 3.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_w_seg_0",
+      "source": "layout",
+      "x": -5.5,
+      "y": 2.5,
+      "z": -0.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_w_lintel_1",
+      "source": "layout",
+      "x": -5.5,
+      "y": 4,
+      "z": 1,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_w_seg_2",
+      "source": "layout",
+      "x": -5.5,
+      "y": 2.5,
+      "z": 2.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_e_seg_0",
+      "source": "layout",
+      "x": -2.5,
+      "y": 2.5,
+      "z": -0.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_e_lintel_1",
+      "source": "layout",
+      "x": -2.5,
+      "y": 4,
+      "z": 1,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_wall_e_seg_2",
+      "source": "layout",
+      "x": -2.5,
+      "y": 2.5,
+      "z": 2.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_mid_west_shop_floor",
+      "source": "layout",
+      "x": -4,
+      "y": -0.5,
+      "z": 1,
+      "w": 2,
+      "h": 1,
+      "d": 4,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "c_room_center_shop_wall_n_seg_0",
+      "source": "layout",
+      "x": 0,
+      "y": 2.5,
+      "z": -2.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_s_seg_0",
+      "source": "layout",
+      "x": 0,
+      "y": 2.5,
+      "z": 2.5,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_w_seg_0",
+      "source": "layout",
+      "x": -1.5,
+      "y": 2.5,
+      "z": -1.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_w_lintel_1",
+      "source": "layout",
+      "x": -1.5,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_w_seg_2",
+      "source": "layout",
+      "x": -1.5,
+      "y": 2.5,
+      "z": 1.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_e_seg_0",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": -1.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_e_lintel_1",
+      "source": "layout",
+      "x": 1.5,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_wall_e_seg_2",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": 1.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_center_shop_floor",
+      "source": "layout",
+      "x": 0,
+      "y": -0.5,
+      "z": 0,
+      "w": 2,
+      "h": 1,
+      "d": 4,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "c_room_south_mid_wall_n_seg_0",
+      "source": "layout",
+      "x": -1.5,
+      "y": 2.5,
+      "z": 6.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_n_lintel_1",
+      "source": "layout",
+      "x": 0,
+      "y": 4,
+      "z": 6.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_n_seg_2",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": 6.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_s_seg_0",
+      "source": "layout",
+      "x": -1.5,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_s_lintel_1",
+      "source": "layout",
+      "x": 0,
+      "y": 4,
+      "z": 15.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_s_seg_2",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_w_seg_0",
+      "source": "layout",
+      "x": -1.5,
+      "y": 2.5,
+      "z": 11,
+      "w": 1,
+      "h": 5,
+      "d": 8,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_wall_e_seg_0",
+      "source": "layout",
+      "x": 1.5,
+      "y": 2.5,
+      "z": 11,
+      "w": 1,
+      "h": 5,
+      "d": 8,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_south_mid_floor",
+      "source": "layout",
+      "x": 0,
+      "y": -0.5,
+      "z": 11,
+      "w": 2,
+      "h": 1,
+      "d": 8,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "c_room_ne_tower_wall_n_seg_0",
+      "source": "layout",
+      "x": 8,
+      "y": 2.5,
+      "z": -19.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_n_lintel_1",
+      "source": "layout",
+      "x": 10,
+      "y": 4,
+      "z": -19.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_n_seg_2",
+      "source": "layout",
+      "x": 12,
+      "y": 2.5,
+      "z": -19.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_s_seg_0",
+      "source": "layout",
+      "x": 8,
+      "y": 2.5,
+      "z": -14.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_s_lintel_1",
+      "source": "layout",
+      "x": 10,
+      "y": 4,
+      "z": -14.5,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_s_seg_2",
+      "source": "layout",
+      "x": 12,
+      "y": 2.5,
+      "z": -14.5,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_w_seg_0",
+      "source": "layout",
+      "x": 7.5,
+      "y": 2.5,
+      "z": -17,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_wall_e_seg_0",
+      "source": "layout",
+      "x": 12.5,
+      "y": 2.5,
+      "z": -17,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_ne_tower_floor",
+      "source": "layout",
+      "x": 10,
+      "y": -0.5,
+      "z": -17,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "cobble"
+    },
+    {
+      "id": "c_room_se_garden_wall_n_seg_0",
+      "source": "layout",
+      "x": 8,
+      "y": 2.5,
+      "z": 14,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_n_lintel_1",
+      "source": "layout",
+      "x": 10,
+      "y": 4,
+      "z": 14,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_n_seg_2",
+      "source": "layout",
+      "x": 12,
+      "y": 2.5,
+      "z": 14,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_s_seg_0",
+      "source": "layout",
+      "x": 8,
+      "y": 2.5,
+      "z": 19,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_s_lintel_1",
+      "source": "layout",
+      "x": 10,
+      "y": 4,
+      "z": 19,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_s_seg_2",
+      "source": "layout",
+      "x": 12,
+      "y": 2.5,
+      "z": 19,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_w_seg_0",
+      "source": "layout",
+      "x": 7.5,
+      "y": 2.5,
+      "z": 16.5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_wall_e_seg_0",
+      "source": "layout",
+      "x": 12.5,
+      "y": 2.5,
+      "z": 16.5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_se_garden_floor",
+      "source": "layout",
+      "x": 10,
+      "y": -0.5,
+      "z": 16.5,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "cobble"
+    },
+    {
+      "id": "c_room_east_market_north_wall_n_seg_0",
+      "source": "layout",
+      "x": 18.5,
+      "y": 2.5,
+      "z": -13.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_s_seg_0",
+      "source": "layout",
+      "x": 18.5,
+      "y": 2.5,
+      "z": -2.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_w_seg_0",
+      "source": "layout",
+      "x": 17.5,
+      "y": 2.5,
+      "z": -11,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_w_lintel_1",
+      "source": "layout",
+      "x": 17.5,
+      "y": 4,
+      "z": -8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_w_seg_2",
+      "source": "layout",
+      "x": 17.5,
+      "y": 2.5,
+      "z": -5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_e_seg_0",
+      "source": "layout",
+      "x": 19.5,
+      "y": 2.5,
+      "z": -11,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_e_lintel_1",
+      "source": "layout",
+      "x": 19.5,
+      "y": 4,
+      "z": -8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_wall_e_seg_2",
+      "source": "layout",
+      "x": 19.5,
+      "y": 2.5,
+      "z": -5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_north_floor",
+      "source": "layout",
+      "x": 18.5,
+      "y": -0.5,
+      "z": -8,
+      "w": 1,
+      "h": 1,
+      "d": 10,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "c_room_east_market_south_wall_n_seg_0",
+      "source": "layout",
+      "x": 18.5,
+      "y": 2.5,
+      "z": 2.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_s_seg_0",
+      "source": "layout",
+      "x": 18.5,
+      "y": 2.5,
+      "z": 13.5,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_w_seg_0",
+      "source": "layout",
+      "x": 17.5,
+      "y": 2.5,
+      "z": 5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_w_lintel_1",
+      "source": "layout",
+      "x": 17.5,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_w_seg_2",
+      "source": "layout",
+      "x": 17.5,
+      "y": 2.5,
+      "z": 11,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_e_seg_0",
+      "source": "layout",
+      "x": 19.5,
+      "y": 2.5,
+      "z": 5,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_e_lintel_1",
+      "source": "layout",
+      "x": 19.5,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_wall_e_seg_2",
+      "source": "layout",
+      "x": 19.5,
+      "y": 2.5,
+      "z": 11,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_room_east_market_south_floor",
+      "source": "layout",
+      "x": 18.5,
+      "y": -0.5,
+      "z": 8,
+      "w": 1,
+      "h": 1,
+      "d": 10,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "ribbon_mid_walkway_west_seg_0",
+      "source": "layout",
+      "x": 5,
+      "y": 2.5,
+      "z": -11.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_lintel_1",
+      "source": "layout",
+      "x": 5,
+      "y": 4,
+      "z": -10,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_seg_2",
+      "source": "layout",
+      "x": 5,
+      "y": 2.5,
+      "z": -5,
+      "w": 1,
+      "h": 5,
+      "d": 8,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_lintel_3",
+      "source": "layout",
+      "x": 5,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_seg_4",
+      "source": "layout",
+      "x": 5,
+      "y": 2.5,
+      "z": 7,
+      "w": 1,
+      "h": 5,
+      "d": 12,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_lintel_5",
+      "source": "layout",
+      "x": 5,
+      "y": 4,
+      "z": 14,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_walkway_west_seg_6",
+      "source": "layout",
+      "x": 5,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_seg_0",
+      "source": "layout",
+      "x": 9,
+      "y": 2.5,
+      "z": -9.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_lintel_1",
+      "source": "layout",
+      "x": 9,
+      "y": 4,
+      "z": -6,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_seg_2",
+      "source": "layout",
+      "x": 9,
+      "y": 2.5,
+      "z": -3,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_lintel_3",
+      "source": "layout",
+      "x": 9,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_seg_4",
+      "source": "layout",
+      "x": 9,
+      "y": 2.5,
+      "z": 4,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_lintel_5",
+      "source": "layout",
+      "x": 9,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_canal_east_seg_6",
+      "source": "layout",
+      "x": 9,
+      "y": 2.5,
+      "z": 12.5,
+      "w": 1,
+      "h": 5,
+      "d": 7,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_seg_0",
+      "source": "layout",
+      "x": 14,
+      "y": 2.5,
+      "z": -9.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_lintel_1",
+      "source": "layout",
+      "x": 14,
+      "y": 4,
+      "z": -6,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_seg_2",
+      "source": "layout",
+      "x": 14,
+      "y": 2.5,
+      "z": -3,
+      "w": 1,
+      "h": 5,
+      "d": 4,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_lintel_3",
+      "source": "layout",
+      "x": 14,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_seg_4",
+      "source": "layout",
+      "x": 14,
+      "y": 2.5,
+      "z": 4,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_lintel_5",
+      "source": "layout",
+      "x": 14,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_mid_east_divider_seg_6",
+      "source": "layout",
+      "x": 14,
+      "y": 2.5,
+      "z": 12.5,
+      "w": 1,
+      "h": 5,
+      "d": 7,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_far_east_wall_seg_0",
+      "source": "layout",
+      "x": 19,
+      "y": 2.5,
+      "z": -7.5,
+      "w": 1,
+      "h": 5,
+      "d": 13,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_far_east_wall_lintel_1",
+      "source": "layout",
+      "x": 19,
+      "y": 4,
+      "z": 0,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_far_east_wall_seg_2",
+      "source": "layout",
+      "x": 19,
+      "y": 2.5,
+      "z": 7.5,
+      "w": 1,
+      "h": 5,
+      "d": 13,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_north_seg_0",
+      "source": "layout",
+      "x": -15,
+      "y": 2.5,
+      "z": 0,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_north_lintel_1",
+      "source": "layout",
+      "x": -13,
+      "y": 4,
+      "z": 0,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_north_seg_2",
+      "source": "layout",
+      "x": -11,
+      "y": 2.5,
+      "z": 0,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_east_seg_0",
+      "source": "layout",
+      "x": -10,
+      "y": 2.5,
+      "z": 3,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_east_lintel_1",
+      "source": "layout",
+      "x": -10,
+      "y": 4,
+      "z": 7.5,
+      "w": 1,
+      "h": 2,
+      "d": 3,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_east_seg_2",
+      "source": "layout",
+      "x": -10,
+      "y": 2.5,
+      "z": 12,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_west_seg_0",
+      "source": "layout",
+      "x": -16,
+      "y": 2.5,
+      "z": 3.5,
+      "w": 1,
+      "h": 5,
+      "d": 7,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_west_lintel_1",
+      "source": "layout",
+      "x": -16,
+      "y": 4,
+      "z": 8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_west_seg_2",
+      "source": "layout",
+      "x": -16,
+      "y": 2.5,
+      "z": 12,
+      "w": 1,
+      "h": 5,
+      "d": 6,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_south_seg_0",
+      "source": "layout",
+      "x": -15,
+      "y": 2.5,
+      "z": 15,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_south_lintel_1",
+      "source": "layout",
+      "x": -13,
+      "y": 4,
+      "z": 15,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_south_seg_2",
+      "source": "layout",
+      "x": -10.5,
+      "y": 2.5,
+      "z": 15,
+      "w": 3,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_south_lintel_3",
+      "source": "layout",
+      "x": -8,
+      "y": 4,
+      "z": 15,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_pool_south_seg_4",
+      "source": "layout",
+      "x": -6.5,
+      "y": 2.5,
+      "z": 15,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_south_seg_0",
+      "source": "layout",
+      "x": -14,
+      "y": 2.5,
+      "z": 19,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_south_lintel_1",
+      "source": "layout",
+      "x": -11,
+      "y": 4,
+      "z": 19,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_south_seg_2",
+      "source": "layout",
+      "x": -8,
+      "y": 2.5,
+      "z": 19,
+      "w": 4,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_west_seg_0",
+      "source": "layout",
+      "x": -16,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_west_lintel_1",
+      "source": "layout",
+      "x": -16,
+      "y": 4,
+      "z": 17,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_west_seg_2",
+      "source": "layout",
+      "x": -16,
+      "y": 2.5,
+      "z": 18.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_east_seg_0",
+      "source": "layout",
+      "x": -6,
+      "y": 2.5,
+      "z": 15.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_east_lintel_1",
+      "source": "layout",
+      "x": -6,
+      "y": 4,
+      "z": 17,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_south_room_east_seg_2",
+      "source": "layout",
+      "x": -6,
+      "y": 2.5,
+      "z": 18.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_catwalk_retaining_seg_0",
+      "source": "layout",
+      "x": -6,
+      "y": 2.5,
+      "z": -11.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_catwalk_retaining_lintel_1",
+      "source": "layout",
+      "x": -6,
+      "y": 4,
+      "z": -8,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_catwalk_retaining_seg_2",
+      "source": "layout",
+      "x": -6,
+      "y": 2.5,
+      "z": -6.5,
+      "w": 1,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_link_divider_seg_0",
+      "source": "layout",
+      "x": -11,
+      "y": 2.5,
+      "z": -9,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_link_divider_lintel_1",
+      "source": "layout",
+      "x": -9,
+      "y": 4,
+      "z": -9,
+      "w": 2,
+      "h": 2,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_a_link_divider_seg_2",
+      "source": "layout",
+      "x": -7,
+      "y": 2.5,
+      "z": -9,
+      "w": 2,
+      "h": 5,
+      "d": 1,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_west_alley_outer_seg_0",
+      "source": "layout",
+      "x": -19,
+      "y": 2.5,
+      "z": -18.5,
+      "w": 1,
+      "h": 5,
+      "d": 3,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_west_alley_outer_lintel_1",
+      "source": "layout",
+      "x": -19,
+      "y": 4,
+      "z": -16,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_west_alley_outer_seg_2",
+      "source": "layout",
+      "x": -19,
+      "y": 2.5,
+      "z": -12.5,
+      "w": 1,
+      "h": 5,
+      "d": 5,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_west_alley_outer_lintel_3",
+      "source": "layout",
+      "x": -19,
+      "y": 4,
+      "z": -9,
+      "w": 1,
+      "h": 2,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "ribbon_west_alley_outer_seg_4",
+      "source": "layout",
+      "x": -19,
+      "y": 2.5,
+      "z": -7,
+      "w": 1,
+      "h": 5,
+      "d": 2,
+      "type": "wall",
+      "facade": true
+    },
+    {
+      "id": "c_court_mid_canal_trench_north_floor_landing_n",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": -10.5,
+      "w": 4,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_canal_trench_north_floor_main",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": -6.5,
+      "w": 4,
+      "h": 1,
+      "d": 5,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_canal_trench_north_floor_landing_s",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": -2.5,
+      "w": 4,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_canal_trench_south_floor_landing_n",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": 2.5,
+      "w": 4,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_canal_trench_south_floor_main",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": 8.5,
+      "w": 4,
+      "h": 1,
+      "d": 9,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_canal_trench_south_floor_landing_s",
+      "source": "layout",
+      "x": 7,
+      "y": -1.5,
+      "z": 14.5,
+      "w": 4,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_north_floor_landing_n",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": -10.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_north_floor_main",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": -6.5,
+      "w": 5,
+      "h": 1,
+      "d": 5,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_north_floor_landing_s",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": -2.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_south_floor_landing_n",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": 2.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_south_floor_main",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": 8.5,
+      "w": 5,
+      "h": 1,
+      "d": 9,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_east_corridor_south_floor_landing_s",
+      "source": "layout",
+      "x": 11.5,
+      "y": -1.5,
+      "z": 14.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_north_floor_landing_n",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": -10.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_north_floor_main",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": -6.5,
+      "w": 5,
+      "h": 1,
+      "d": 5,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_north_floor_landing_s",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": -2.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_south_floor_landing_n",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": 2.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_south_floor_main",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": 8.5,
+      "w": 5,
+      "h": 1,
+      "d": 9,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_mid_far_east_south_floor_landing_s",
+      "source": "layout",
+      "x": 16.5,
+      "y": -1.5,
+      "z": 14.5,
+      "w": 5,
+      "h": 1,
+      "d": 3,
+      "type": "cobble"
+    },
+    {
+      "id": "c_court_a_link_floor",
+      "source": "layout",
+      "x": -7.5,
+      "y": -0.5,
+      "z": -14.5,
+      "w": 9,
+      "h": 1,
+      "d": 11,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_catwalk_deck",
+      "source": "layout",
+      "x": -7.5,
+      "y": 1.5,
+      "z": -10,
+      "w": 3,
+      "h": 1,
+      "d": 8,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_catwalk_support",
+      "source": "layout",
+      "x": -7.5,
+      "y": 0.5,
+      "z": -10,
+      "w": 3,
+      "h": 1,
+      "d": 8,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_catwalk_rail_n",
+      "source": "layout",
+      "x": -7.5,
+      "y": 2.5,
+      "z": -13.5,
+      "w": 3,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_platform_catwalk_rail_s",
+      "source": "layout",
+      "x": -7.5,
+      "y": 2.5,
+      "z": -6.5,
+      "w": 3,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_platform_mid_east_landing_deck",
+      "source": "layout",
+      "x": 11,
+      "y": 1.5,
+      "z": 0,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_mid_east_landing_support",
+      "source": "layout",
+      "x": 11,
+      "y": 0.5,
+      "z": 0,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_mid_east_landing_rail_n",
+      "source": "layout",
+      "x": 11,
+      "y": 2.5,
+      "z": -1.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_platform_mid_east_landing_rail_s",
+      "source": "layout",
+      "x": 11,
+      "y": 2.5,
+      "z": 1.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_platform_a_heaven_perch_deck",
+      "source": "layout",
+      "x": -14,
+      "y": 1.5,
+      "z": -3,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_a_heaven_perch_support",
+      "source": "layout",
+      "x": -14,
+      "y": 0.5,
+      "z": -3,
+      "w": 4,
+      "h": 1,
+      "d": 4,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_platform_a_heaven_perch_rail_n",
+      "source": "layout",
+      "x": -14,
+      "y": 2.5,
+      "z": -4.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_platform_a_heaven_perch_rail_s",
+      "source": "layout",
+      "x": -14,
+      "y": 2.5,
+      "z": -1.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_bridge_mid_wooden_deck",
+      "source": "layout",
+      "x": 7,
+      "y": 1.5,
+      "z": 0,
+      "w": 4,
+      "h": 1,
+      "d": 2,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "c_bridge_mid_wooden_support_w",
+      "source": "layout",
+      "x": 5.5,
+      "y": 0.5,
+      "z": 0,
+      "w": 1,
+      "h": 1,
+      "d": 2,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_bridge_mid_wooden_support_e",
+      "source": "layout",
+      "x": 8.5,
+      "y": 0.5,
+      "z": 0,
+      "w": 1,
+      "h": 1,
+      "d": 2,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_bridge_mid_wooden_rail_n",
+      "source": "layout",
+      "x": 7,
+      "y": 2.5,
+      "z": -0.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "pagoda_wood",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_bridge_mid_wooden_rail_s",
+      "source": "layout",
+      "x": 7,
+      "y": 2.5,
+      "z": 0.5,
+      "w": 4,
+      "h": 1,
+      "d": 1,
+      "type": "pagoda_wood",
+      "decor": true,
+      "noCollision": true
+    },
+    {
+      "id": "c_bridge_a_site_foot_deck",
+      "source": "layout",
+      "x": -12,
+      "y": 1.5,
+      "z": 8,
+      "w": 4,
+      "h": 1,
+      "d": 2,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_bridge_a_site_foot_support_w",
+      "source": "layout",
+      "x": -13.5,
+      "y": 0.5,
+      "z": 8,
+      "w": 1,
+      "h": 1,
+      "d": 2,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_bridge_a_site_foot_support_e",
+      "source": "layout",
+      "x": -10.5,
+      "y": 0.5,
+      "z": 8,
+      "w": 1,
+      "h": 1,
+      "d": 2,
+      "type": "accent_stone"
+    },
+    {
+      "id": "c_water_a_pool_surface",
+      "source": "layout",
+      "x": -13,
+      "y": -0.5,
+      "z": 7.5,
+      "w": 6,
+      "h": 1,
+      "d": 15,
+      "type": "water",
+      "noCollision": true
+    },
+    {
+      "id": "c_water_mid_canal_north_surface",
+      "source": "layout",
+      "x": 7,
+      "y": -0.5,
+      "z": -6.5,
+      "w": 1,
+      "h": 1,
+      "d": 11,
+      "type": "water",
+      "noCollision": true
+    },
+    {
+      "id": "c_water_mid_canal_south_surface",
+      "source": "layout",
+      "x": 7,
+      "y": -0.5,
+      "z": 8.5,
+      "w": 1,
+      "h": 1,
+      "d": 15,
+      "type": "water",
+      "noCollision": true
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_catwalk",
+      "source": "layout",
+      "axis": "z",
+      "minX": -8.5,
+      "maxX": -6.5,
+      "minZ": -6,
+      "maxZ": -3,
+      "startY": 2,
+      "endY": 0,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_mid_bridge_west",
+      "source": "layout",
+      "axis": "x",
+      "minX": 1,
+      "maxX": 5,
+      "minZ": -1,
+      "maxZ": 1,
+      "startY": 0,
+      "endY": 2,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_canal_trench_north",
+      "source": "layout",
+      "axis": "z",
+      "minX": 6,
+      "maxX": 8,
+      "minZ": -12,
+      "maxZ": -9,
+      "startY": 0,
+      "endY": -1,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_canal_trench_south",
+      "source": "layout",
+      "axis": "z",
+      "minX": 6,
+      "maxX": 8,
+      "minZ": 13,
+      "maxZ": 16,
+      "startY": -1,
+      "endY": 0,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_mid_east_north",
+      "source": "layout",
+      "axis": "z",
+      "minX": 11,
+      "maxX": 13,
+      "minZ": -12,
+      "maxZ": -9,
+      "startY": 0,
+      "endY": -1,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_mid_east_south",
+      "source": "layout",
+      "axis": "z",
+      "minX": 11,
+      "maxX": 13,
+      "minZ": 13,
+      "maxZ": 16,
+      "startY": -1,
+      "endY": 0,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_mid_far_east_north",
+      "source": "layout",
+      "axis": "z",
+      "minX": 16,
+      "maxX": 18,
+      "minZ": -12,
+      "maxZ": -9,
+      "startY": 0,
+      "endY": -1,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_mid_far_east_south",
+      "source": "layout",
+      "axis": "z",
+      "minX": 16,
+      "maxX": 18,
+      "minZ": 13,
+      "maxZ": 16,
+      "startY": -1,
+      "endY": 0,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "macro": "stairs",
+      "id": "c_stairs_a_heaven",
+      "source": "layout",
+      "axis": "z",
+      "minX": -15,
+      "maxX": -13,
+      "minZ": -8,
+      "maxZ": -5,
+      "startY": 0,
+      "endY": 2,
+      "steps": 5,
+      "type": "accent_stone"
+    },
+    {
+      "id": "foliage_mid_center_tree_trunk",
+      "source": "layout",
+      "x": 0,
+      "y": 1.5,
+      "z": -5,
+      "w": 1,
+      "h": 3,
+      "d": 1,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "foliage_mid_center_tree_leaves",
+      "source": "layout",
+      "x": 0,
+      "y": 3.5,
+      "z": -5,
+      "w": 3,
+      "h": 2,
+      "d": 3,
+      "type": "accent_stone",
+      "decor": true,
+      "noCollision": true,
+      "floatOK": true
+    },
+    {
+      "id": "foliage_a_pool_planter_base",
+      "source": "layout",
+      "x": -9,
+      "y": 0.5,
+      "z": 7,
+      "w": 1,
+      "h": 1,
+      "d": 3,
+      "type": "accent_stone"
+    },
+    {
+      "id": "crate_mid_north_cover",
+      "source": "layout",
+      "x": 1,
+      "y": 1,
+      "z": -6,
+      "w": 2,
+      "h": 2,
+      "d": 2,
+      "type": "brick"
+    },
+    {
+      "id": "crate_mid_west_cover",
+      "source": "layout",
+      "x": -4,
+      "y": 1,
+      "z": 3,
+      "w": 2,
+      "h": 2,
+      "d": 2,
+      "type": "pagoda_wood"
+    },
+    {
+      "id": "crate_a_site_cover",
+      "source": "layout",
+      "x": -14.5,
+      "y": 1,
+      "z": 11,
+      "w": 2,
+      "h": 2,
+      "d": 2,
+      "type": "brick"
+    },
+    {
+      "id": "crate_east_market_cover",
+      "source": "layout",
+      "x": 13,
+      "y": 1,
+      "z": -7,
+      "w": 2,
+      "h": 2,
+      "d": 2,
+      "type": "pagoda_wood"
+    }
   ]
 }

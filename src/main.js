@@ -1,4 +1,5 @@
 import './style.css'
+import * as THREE             from 'three'
 import { GameEngine }       from './core/GameEngine.js'
 import { MapLoader }        from './map/MapLoader.js'
 import { MapCollision }     from './map/MapCollision.js'
@@ -12,11 +13,13 @@ import { EndScreen }        from './ui/EndScreen.js'
 import { bus }              from './core/EventBus.js'
 import { getSafeSpawnPoint }  from './core/SpawnSystem.js'
 import { MapExplorer }        from './debug/MapExplorer.js'
+import { AGENT_LIST }         from './agents/AgentRegistry.js'
 import ascentMap            from './map/maps/ascent.json'
+import { Minimap }            from './ui/Minimap.js'
 
 // ── State ──────────────────────────────────────────────
 let engine, mapLoader, mapCollision, player, bots, dm, hud
-let tracerManager, agentSelect, endScreen, mapExplorer
+let tracerManager, agentSelect, endScreen, mapExplorer, minimap
 let currentAgent = null
 let currentWeapon = 'vandal'
 let spawnPoints  = []
@@ -90,7 +93,7 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
   // Load map
   await mapLoader.load(ascentMap)
   spawnPoints  = mapLoader.getSpawnPoints(ascentMap)
-  mapCollision = new MapCollision(mapLoader.getColliders(), mapLoader.getRamps())
+  mapCollision = new MapCollision(mapLoader.getColliders(), mapLoader.getRamps(), 8, mapLoader.getLadders())
 
   // Player with tracer manager and dedicated viewmodel overlay camera
   const startPos = getSafeSpawnPoint(spawnPoints, [])
@@ -108,11 +111,33 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
   bots.spawn(BOT_COUNT, spawnPoints, player)
 
   // Map Explorer & Debug Manager (Always available via F1 / F3, active by default in exploration mode)
-  mapExplorer = new MapExplorer(engine.scene, engine.camera, player, mapLoader, bots)
+  mapExplorer = new MapExplorer(engine.scene, engine.camera, player, mapLoader, bots, engine.renderer, engine)
   if (isExploration) {
     mapExplorer.enable()
   } else {
     mapExplorer.disable()
+  }
+
+  // Expose debugging and teleport hooks for chunk validation
+  window.player = player
+  window.mapExplorer = mapExplorer
+  window.CHUNK_C_TELEPORT_POINTS = {
+    'A-site pool edge': { x: -9.5, y: 1.0, z: 7.5 },
+    'Mid bridge': { x: 7.0, y: 3.0, z: 0.0 },
+    'Red-floor room doorway': { x: -0.5, y: 1.0, z: -8.5 },
+    'Mid lowered corridor': { x: 7.0, y: 0.0, z: 6.0 }
+  }
+  window.teleportTo = (keyOrX, y, z) => {
+    if (typeof keyOrX === 'string' && window.CHUNK_C_TELEPORT_POINTS[keyOrX]) {
+      const pt = window.CHUNK_C_TELEPORT_POINTS[keyOrX]
+      player.teleportTo(pt.x, pt.y, pt.z)
+      console.log(`Teleported to "${keyOrX}" at (${pt.x}, ${pt.y}, ${pt.z})`)
+    } else if (typeof keyOrX === 'number' && typeof y === 'number' && typeof z === 'number') {
+      player.teleportTo(keyOrX, y, z)
+      console.log(`Teleported to (${keyOrX}, ${y}, ${z})`)
+    } else {
+      console.log('Available points:', Object.keys(window.CHUNK_C_TELEPORT_POINTS))
+    }
   }
 
   // HUD
@@ -134,6 +159,17 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
   if (dm) dm.stop()
   dm = new Deathmatch()
 
+  // Minimap (Valorant Tactical Minimap & Full Map Modal)
+  minimap = new Minimap({
+    player,
+    bots,
+    zones: mapLoader?.getZones?.() || ascentMap.zones || [],
+    mapBounds: { minX: -55, maxX: 55, minZ: -55, maxZ: 55 },
+    imageSrc: '/docs/reference/topdown.png',
+    engine
+  })
+  window.minimap = minimap
+
   // Register update loop
   engine.removeUpdateFn(gameLoop)
   engine.addUpdateFn(gameLoop)
@@ -146,12 +182,14 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
 function gameLoop(dt) {
   if (!player || !bots) return
 
-  mapLoader.update(performance.now() * 0.001)
+  const focusPos = engine.overrideCamera ? engine.overrideCamera.position : (player ? player.position : null)
+  mapLoader.update(performance.now() * 0.001, focusPos)
   tracerManager.update(dt)
   player.update(dt, bots.getAll())
   bots.update(dt, player.position, mapCollision, player.alive, player.velocity)
   dm.update()
   mapExplorer?.update()
+  minimap?.update(dt)
 }
 
 // ── Game Events ────────────────────────────────────────
@@ -296,6 +334,7 @@ function endGame(stats) {
   engine.removeUpdateFn(gameLoop)
   bots.clearAll()
   tracerManager.clear()
+  minimap?.destroy()
 
   hideAll()
   endScreen.show(
@@ -307,4 +346,64 @@ function endGame(stats) {
 
 // ── Start ──────────────────────────────────────────────
 init()
-showMainMenu()
+
+const CAMERA_PRESETS = {
+  // 12 Blueprint Reference Views
+  a_site_from_a_main:   { pos: [-38.0, 2.0, -20.0], target: [-34.0, 1.8, -4.0] },
+  a_site_from_tower:    { pos: [-43.0, 4.8, -4.0],  target: [-30.0, 1.5, -4.0] },
+  mid_bridge_view:      { pos: [0.0, 2.0, 16.0],    target: [0.0, 2.8, -10.0] },
+  b_site_from_b_main:   { pos: [38.0, 2.0, -20.0],  target: [34.0, 1.8, -4.0] },
+  b_site_tower_view:    { pos: [41.0, 4.5, 14.0],   target: [34.0, 1.8, -4.0] },
+  attacker_exit_to_mid: { pos: [0.0, 2.0, -28.0],   target: [0.0, 2.0, 0.0] },
+  defender_exit:        { pos: [0.0, 2.0, 36.0],    target: [0.0, 2.0, 10.0] },
+  water_under_bridge:   { pos: [0.0, 0.4, 8.0],     target: [0.0, 0.6, -10.0] },
+  alley_flank:          { pos: [-33.0, 2.0, 32.0],  target: [-33.0, 2.0, 14.0] },
+  open_yard_long_sight: { pos: [9.0, 2.0, 10.0],    target: [-6.0, 2.5, -6.0] },
+  isometric:            { pos: [65.0, 60.0, 65.0],  target: [0.0, 0.0, 0.0] },
+  aerial:               { pos: [0.0, 92.0, 0.0],    target: [0.0, 0.0, -0.1] },
+
+  // Blueprint & User Aliases
+  b_tower:              { pos: [41.0, 4.5, 14.0],   target: [34.0, 1.8, -4.0] },
+  mid_bridge:           { pos: [0.0, 2.0, 16.0],    target: [0.0, 2.8, -10.0] },
+  alley:                { pos: [-33.0, 2.0, 32.0],  target: [-33.0, 2.0, 14.0] },
+  open_yard:            { pos: [9.0, 2.0, 10.0],    target: [-6.0, 2.5, -6.0] },
+  topdown_mid:          { pos: [0.0, 45.0, 0.0],    target: [0.0, 0.0, 0.0] }
+}
+window.CAMERA_PRESETS = CAMERA_PRESETS
+window.MID_PRESETS = CAMERA_PRESETS
+
+const params = new URLSearchParams(window.location.search)
+const viewPreset = params.get('view') || params.get('preset')
+const autoPlay = params.get('play') || params.get('autostart')
+const showTactical = params.get('tactical') === '1'
+
+if (viewPreset && CAMERA_PRESETS[viewPreset]) {
+  const p = CAMERA_PRESETS[viewPreset]
+  startGame(AGENT_LIST[0], 'vandal', true).then(() => {
+    document.getElementById('main-menu')?.classList.remove('active')
+    document.getElementById('play-overlay')?.classList.add('hidden')
+    const expOverlay = document.getElementById('debug-explorer-overlay')
+    if (expOverlay) expOverlay.style.display = 'none'
+    const topdownCont = document.getElementById('topdown-blueprint-container')
+    if (topdownCont) topdownCont.style.display = 'none'
+    hud.hide()
+
+    const presetCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    presetCam.position.set(p.pos[0], p.pos[1], p.pos[2])
+    presetCam.lookAt(p.target[0], p.target[1], p.target[2])
+    presetCam.updateMatrixWorld()
+    engine.setOverrideCamera(presetCam)
+
+    window.__READY_FOR_SCREENSHOT = true
+  })
+} else if (autoPlay) {
+  startGame(AGENT_LIST[0], 'vandal', false).then(() => {
+    document.getElementById('main-menu')?.classList.remove('active')
+    document.getElementById('play-overlay')?.classList.add('hidden')
+    if (showTactical) {
+      setTimeout(() => minimap?.openTacticalMap(), 300)
+    }
+  })
+} else {
+  showMainMenu()
+}
