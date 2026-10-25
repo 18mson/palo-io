@@ -2,14 +2,17 @@
  * Minimap — Valorant-style Tactical Minimap & Full Tactical Map View
  * Features:
  *  - Circular high-contrast HUD radar with rotating / fixed orientation
- *  - Player FOV vision cone & directional chevron
+ *  - Player FOV vision cone & directional chevron tracking live camera aim
  *  - Live bot tracking with firing shockwaves & dead state
  *  - Real-time zone detection & callout badge (e.g. "MID COURTYARD", "A SITE")
- *  - Bomb sites A and B with edge clamping & directional arrows
+ *  - Continuous connected walkable route floorplan (rooms, corridors, stairs, teleporters)
+ *  - Bomb sites A and B with plant zones, edge clamping & directional arrows
  *  - Full Tactical Map modal (Hotkey [M] or expand button) with zone labels,
  *    cursor coordinates, interactive click-to-ping / click-to-teleport
  */
 
+import * as THREE from 'three'
+import bindLayout from '../map/bind/bind.layout.json'
 import { makeDraggable } from './draggable.js'
 
 export function getZoneAtPosition(x, z, zones = []) {
@@ -32,10 +35,35 @@ export class Minimap {
   constructor(options = {}) {
     this.player     = options.player || null
     this.bots       = options.bots || null
-    this.zones      = options.zones || []
     this.engine     = options.engine || null
+    this.layout     = options.layout || bindLayout
     this.mapBounds  = options.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
     this.imageSrc   = options.imageSrc || null
+
+    // Build zones list from regions and connectors
+    const regions = (this.layout?.regions || []).map(r => ({
+      id: r.id,
+      name: r.name || r.id,
+      minX: r.rect[0],
+      minZ: r.rect[1],
+      maxX: r.rect[2],
+      maxZ: r.rect[3],
+      level: r.level || 0
+    }))
+    const connectors = (this.layout?.connectors || []).map(c => {
+      const n0 = c.between?.[0] || ''
+      const n1 = c.between?.[1] || ''
+      return {
+        id: c.id,
+        name: c.name || `${n0} to ${n1}`,
+        minX: c.rect[0],
+        minZ: c.rect[1],
+        maxX: c.rect[2],
+        maxZ: c.rect[3],
+        level: c.level || 0
+      }
+    })
+    this.zones = options.zones && options.zones.length > 0 ? options.zones : [...regions, ...connectors]
 
     // Configuration & State
     this.modes = ['rotate', 'fixed', 'full']
@@ -79,7 +107,7 @@ export class Minimap {
     this.tacticalCtx = null
     this._setupCanvases()
 
-    // Offscreen Canvas for caching map image & vector map
+    // Offscreen Canvas for caching vector map background
     this.mapBgCanvas = document.createElement('canvas')
     this.mapBgCanvas.width = 1024
     this.mapBgCanvas.height = 1024
@@ -101,7 +129,9 @@ export class Minimap {
   }
 
   setZones(zones) {
-    this.zones = zones || []
+    if (zones && zones.length > 0) {
+      this.zones = zones
+    }
     this._buildProceduralMapBase()
     if (this.bgImage) {
       this._drawMapImageOnBg(this.bgImage)
@@ -135,79 +165,336 @@ export class Minimap {
 
   _getSites() {
     const list = []
-    for (const z of this.zones) {
-      const zid = (z.id || '').toLowerCase()
-      const zname = (z.name || '').toUpperCase()
-      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
-      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
-      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
-      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
-      const cx = (minX + maxX) / 2
-      const cz = (minZ + maxZ) / 2
+    if (this.layout?.plantZones) {
+      if (this.layout.plantZones.A) {
+        const [x0, z0, x1, z1] = this.layout.plantZones.A
+        list.push({ id: 'A', x: (x0 + x1) / 2, z: (z0 + z1) / 2, color: '#06b6d4', bg: '#083344' })
+      }
+      if (this.layout.plantZones.B) {
+        const [x0, z0, x1, z1] = this.layout.plantZones.B
+        list.push({ id: 'B', x: (x0 + x1) / 2, z: (z0 + z1) / 2, color: '#f59e0b', bg: '#451a03' })
+      }
+    }
+    if (list.length === 0) {
+      for (const z of this.zones) {
+        const zid = (z.id || '').toLowerCase()
+        const zname = (z.name || '').toUpperCase()
+        const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
+        const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
+        const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
+        const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+        const cx = (minX + maxX) / 2
+        const cz = (minZ + maxZ) / 2
 
-      if (zid === 'asite' || (zid.includes('site') && zid.includes('a')) || zname === 'A SITE') {
-        list.push({ id: 'A', x: cx, z: cz, color: '#06b6d4', bg: '#083344' })
-      } else if (zid === 'bsite' || (zid.includes('site') && zid.includes('b')) || zname === 'B SITE') {
-        list.push({ id: 'B', x: cx, z: cz, color: '#f59e0b', bg: '#451a03' })
+        if (zid === 'asite' || (zid.includes('site') && zid.includes('a')) || zname === 'A SITE') {
+          list.push({ id: 'A', x: cx, z: cz, color: '#06b6d4', bg: '#083344' })
+        } else if (zid === 'bsite' || (zid.includes('site') && zid.includes('b')) || zname === 'B SITE') {
+          list.push({ id: 'B', x: cx, z: cz, color: '#f59e0b', bg: '#451a03' })
+        }
       }
     }
     return list
   }
 
-  // ── Procedural Vector Base Map (Instant Fallback) ──────
+  // ── Procedural Vector Base Map (Continuous Tactical Routes) ──────
   _buildProceduralMapBase() {
     const ctx = this.mapBgCanvas.getContext('2d')
     const size = 1024
     ctx.clearRect(0, 0, size, size)
 
-    // Dark void sky background
-    ctx.fillStyle = '#060d14'
+    // 1. Deep Tactical Space Background
+    ctx.fillStyle = '#070c14'
     ctx.fillRect(0, 0, size, size)
 
-    const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
-    const spanX = bounds.maxX - bounds.minX
-    const spanZ = bounds.maxZ - bounds.minZ
+    // Uniform 8.0 px/m scale:
+    // Map bounds: X [-60, 60] (span 120m), Z [-56, 56] (span 112m)
+    // 120m * 8.0 = 960px, 112m * 8.0 = 896px. Center in 1024x1024:
+    const ppm = 8.0
+    const offX = 32
+    const offY = 64
+    const toBgX = (wx) => offX + (wx - (-60)) * ppm
+    const toBgY = (wz) => offY + (wz - (-56)) * ppm
+    const toBgW = (rw) => rw * ppm
+    const toBgH = (rh) => rh * ppm
 
-    // Border
-    ctx.save()
-    ctx.fillStyle = '#0f1a24'
-    ctx.strokeStyle = '#00f0ff33'
-    ctx.lineWidth = 4
-    ctx.strokeRect(16, 16, size - 32, size - 32)
-    ctx.restore()
+    // Subtle 10-meter grid lines
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)'
+    ctx.lineWidth = 1
+    for (let gx = -60; gx <= 60; gx += 10) {
+      const cx = toBgX(gx)
+      ctx.beginPath(); ctx.moveTo(cx, offY); ctx.lineTo(cx, offY + 896); ctx.stroke()
+    }
+    for (let gz = -56; gz <= 56; gz += 10) {
+      const cy = toBgY(gz)
+      ctx.beginPath(); ctx.moveTo(offX, cy); ctx.lineTo(offX + 960, cy); ctx.stroke()
+    }
 
-    // Draw Zone Outlines & Soft Fills from this.zones
-    for (const z of this.zones) {
-      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
-      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
-      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
-      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+    // Outer Map Bounds Frame
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.16)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(offX, offY, 960, 896)
 
-      const x0 = ((minX - bounds.minX) / spanX) * size
-      const y0 = ((minZ - bounds.minZ) / spanZ) * size
-      const w  = ((maxX - minX) / spanX) * size
-      const h  = ((maxZ - minZ) / spanZ) * size
+    // 2. CONNECTORS (Corridors connecting rooms into seamless routes)
+    const connectors = this.layout?.connectors || []
+    for (const c of connectors) {
+      const [x0, z0, x1, z1] = c.rect
+      const bx = toBgX(x0)
+      const by = toBgY(z0)
+      const bw = toBgW(x1 - x0)
+      const bh = toBgH(z1 - z0)
 
-      let fillColor = 'rgba(255, 255, 255, 0.03)'
-      let strokeColor = 'rgba(255, 255, 255, 0.15)'
+      // Tactical corridor floor fill
+      ctx.fillStyle = '#141e2b'
+      ctx.fillRect(bx, by, bw, bh)
+      // Corridor edge walls
+      ctx.strokeStyle = '#27384e'
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(bx, by, bw, bh)
+    }
 
-      const zid = (z.id || '').toLowerCase()
-      if (zid.includes('site') || zid.includes('plant') || zid.includes('heaven')) {
-        fillColor = zid.includes('a') ? 'rgba(6, 182, 212, 0.08)' : 'rgba(245, 158, 11, 0.08)'
-        strokeColor = zid.includes('a') ? 'rgba(6, 182, 212, 0.4)' : 'rgba(245, 158, 11, 0.4)'
-      } else if (zid.includes('attacker') || zid.includes('spawn')) {
-        fillColor = 'rgba(34, 197, 94, 0.06)'
-        strokeColor = 'rgba(34, 197, 94, 0.3)'
-      } else if (zid.includes('defender')) {
-        fillColor = 'rgba(239, 68, 68, 0.06)'
-        strokeColor = 'rgba(239, 68, 68, 0.3)'
+    // 3. REGIONS (Rooms, Halls, Sites, Spawns)
+    const regions = this.layout?.regions || []
+    for (const r of regions) {
+      const [x0, z0, x1, z1] = r.rect
+      const bx = toBgX(x0)
+      const by = toBgY(z0)
+      const bw = toBgW(x1 - x0)
+      const bh = toBgH(z1 - z0)
+
+      let fillColor = '#172333'
+      let strokeColor = '#2b3f58'
+
+      if (r.id === 'attackerSpawn' || r.id === 'attackerCave') {
+        fillColor = '#241419'
+        strokeColor = 'rgba(239, 68, 68, 0.45)'
+      } else if (r.id === 'defenderSpawn') {
+        fillColor = '#122033'
+        strokeColor = 'rgba(59, 130, 246, 0.45)'
+      } else if (r.id === 'aSite') {
+        fillColor = '#0f2738'
+        strokeColor = 'rgba(6, 182, 212, 0.5)'
+      } else if (r.id === 'bSite') {
+        fillColor = '#291e12'
+        strokeColor = 'rgba(245, 158, 11, 0.5)'
+      } else if (r.level === 1) {
+        // Elevated areas (A Heaven, B Hookah)
+        fillColor = '#21182b'
+        strokeColor = 'rgba(168, 85, 247, 0.55)'
       }
 
       ctx.fillStyle = fillColor
-      ctx.fillRect(x0, y0, w, h)
+      ctx.fillRect(bx, by, bw, bh)
       ctx.strokeStyle = strokeColor
       ctx.lineWidth = 2
-      ctx.strokeRect(x0, y0, w, h)
+      ctx.strokeRect(bx, by, bw, bh)
+    }
+
+    // 4. STAIRS (Directional Hatch Lines)
+    const stairs = this.layout?.stairs || []
+    for (const s of stairs) {
+      const [x0, z0, x1, z1] = s.rect
+      const bx = toBgX(x0)
+      const by = toBgY(z0)
+      const bw = toBgW(x1 - x0)
+      const bh = toBgH(z1 - z0)
+
+      ctx.fillStyle = '#3a2512'
+      ctx.fillRect(bx, by, bw, bh)
+      ctx.strokeStyle = '#d97706'
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(bx, by, bw, bh)
+
+      // Hatch steps
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.65)'
+      ctx.lineWidth = 1.5
+      const d = s.ascendsToward
+      if (d === 'west' || d === 'east') {
+        const stepCount = (x1 - x0) * 2
+        for (let i = 1; i < stepCount; i++) {
+          const hx = toBgX(x0 + i * 0.5)
+          ctx.beginPath(); ctx.moveTo(hx, by); ctx.lineTo(hx, by + bh); ctx.stroke()
+        }
+      } else {
+        const stepCount = (z1 - z0) * 2
+        for (let i = 1; i < stepCount; i++) {
+          const hy = toBgY(z0 + i * 0.5)
+          ctx.beginPath(); ctx.moveTo(bx, hy); ctx.lineTo(bx + bw, hy); ctx.stroke()
+        }
+      }
+    }
+
+    // 5. WINDOWS (Viewports / Ledges)
+    const windows = this.layout?.windows || []
+    for (const wnd of windows) {
+      const [x0, z0, x1, z1] = wnd.rect
+      const bx = toBgX(x0)
+      const by = toBgY(z0)
+      const bw = toBgW(x1 - x0)
+      const bh = toBgH(z1 - z0)
+
+      ctx.strokeStyle = '#06b6d4'
+      ctx.lineWidth = 3
+      ctx.strokeRect(bx, by, bw, bh)
+    }
+
+    // 6. SPIKE PLANT ZONES (A & B)
+    if (this.layout?.plantZones) {
+      const pzDefs = [
+        { key: 'A', rect: this.layout.plantZones.A, color: '#facc15' },
+        { key: 'B', rect: this.layout.plantZones.B, color: '#facc15' }
+      ]
+      for (const p of pzDefs) {
+        if (!p.rect) continue
+        const [x0, z0, x1, z1] = p.rect
+        const bx = toBgX(x0)
+        const by = toBgY(z0)
+        const bw = toBgW(x1 - x0)
+        const bh = toBgH(z1 - z0)
+
+        // Semi-transparent yellow zone
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.12)'
+        ctx.fillRect(bx, by, bw, bh)
+
+        // Dashed border
+        ctx.strokeStyle = p.color
+        ctx.lineWidth = 2.5
+        ctx.setLineDash([6, 5])
+        ctx.strokeRect(bx, by, bw, bh)
+        ctx.setLineDash([])
+      }
+    }
+
+    // 7. TELEPORTERS & TELEPORT ROUTES
+    const teleporters = this.layout?.teleporters || []
+    for (const tp of teleporters) {
+      if (tp.entryPad) {
+        const [x0, z0, x1, z1] = tp.entryPad
+        const bx = toBgX(x0)
+        const by = toBgY(z0)
+        const bw = toBgW(x1 - x0)
+        const bh = toBgH(z1 - z0)
+
+        // Portal entry pad (Glowing violet)
+        ctx.fillStyle = 'rgba(168, 85, 247, 0.45)'
+        ctx.fillRect(bx, by, bw, bh)
+        ctx.strokeStyle = '#c084fc'
+        ctx.lineWidth = 2.5
+        ctx.strokeRect(bx, by, bw, bh)
+
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('PORTAL', bx + bw / 2, by + bh / 2)
+      }
+
+      if (tp.exitPad) {
+        const [x0, z0, x1, z1] = tp.exitPad
+        const bx = toBgX(x0)
+        const by = toBgY(z0)
+        const bw = toBgW(x1 - x0)
+        const bh = toBgH(z1 - z0)
+
+        // Portal exit pad (Teal)
+        ctx.fillStyle = 'rgba(20, 184, 166, 0.35)'
+        ctx.fillRect(bx, by, bw, bh)
+        ctx.strokeStyle = '#2dd4bf'
+        ctx.lineWidth = 2.5
+        ctx.strokeRect(bx, by, bw, bh)
+
+        ctx.fillStyle = '#2dd4bf'
+        ctx.font = 'bold 10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('EXIT', bx + bw / 2, by + bh / 2)
+      }
+
+      // Route dashed arc connecting entrance to exit
+      if (tp.entryPad && tp.exitPad) {
+        const enX = toBgX((tp.entryPad[0] + tp.entryPad[2]) / 2)
+        const enY = toBgY((tp.entryPad[1] + tp.entryPad[3]) / 2)
+        const exX = toBgX((tp.exitPad[0] + tp.exitPad[2]) / 2)
+        const exY = toBgY((tp.exitPad[1] + tp.exitPad[3]) / 2)
+
+        ctx.save()
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.35)'
+        ctx.lineWidth = 2
+        ctx.setLineDash([4, 6])
+        ctx.beginPath()
+        ctx.moveTo(enX, enY)
+        const midY = Math.min(enY, exY) - 30
+        ctx.quadraticCurveTo((enX + exX) / 2, midY, exX, exY)
+        ctx.stroke()
+        ctx.restore()
+      }
+    }
+
+    // 8. PROPS / COVER (Crates, Containers, Pillars)
+    const props = this.layout?.props || []
+    for (const p of props) {
+      const [x0, z0, x1, z1] = p.rect
+      const bx = toBgX(x0)
+      const by = toBgY(z0)
+      const bw = toBgW(x1 - x0)
+      const bh = toBgH(z1 - z0)
+
+      ctx.fillStyle = '#0b111a'
+      ctx.fillRect(bx, by, bw, bh)
+      ctx.strokeStyle = '#334155'
+      ctx.lineWidth = 1.2
+      ctx.strokeRect(bx, by, bw, bh)
+
+      // Crate cross
+      if (p.type === 'crate') {
+        ctx.strokeStyle = '#1e293b'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by + bh)
+        ctx.moveTo(bx + bw, by); ctx.lineTo(bx, by + bh)
+        ctx.stroke()
+      }
+    }
+
+    // 9. STRATEGIC CALLOUT LABELS ON THE MAP
+    const callouts = [
+      { name: 'ATTACKER SPAWN', x: 0, z: 49, color: '#f87171' },
+      { name: 'DEFENDER SPAWN', x: 0, z: -49, color: '#60a5fa' },
+      { name: 'A SITE', x: -40, z: -13, color: '#38bdf8' },
+      { name: 'B SITE', x: 37, z: -14, color: '#fbbf24' },
+      { name: 'A SHORT', x: -28, z: 18, color: '#94a3b8' },
+      { name: 'A BATH', x: -51, z: 30, color: '#94a3b8' },
+      { name: 'A LOBBY', x: -36, z: 46, color: '#94a3b8' },
+      { name: 'B LOBBY', x: 36, z: 46, color: '#94a3b8' },
+      { name: 'B LONG', x: 47, z: 24, color: '#94a3b8' },
+      { name: 'B HOOKAH', x: 30, z: -1, color: '#c084fc' },
+      { name: 'A HEAVEN', x: -48, z: -18, color: '#c084fc' },
+      { name: 'MARKET', x: 0, z: -28, color: '#94a3b8' },
+      { name: 'B ELBOW', x: 21, z: -16, color: '#94a3b8' }
+    ]
+
+    for (const c of callouts) {
+      const cx = toBgX(c.x)
+      const cy = toBgY(c.z)
+
+      ctx.font = 'bold 11px sans-serif'
+      const textMetrics = ctx.measureText(c.name)
+      const pw = textMetrics.width + 12
+      const ph = 18
+
+      // Pill background
+      ctx.fillStyle = 'rgba(7, 12, 20, 0.82)'
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.roundRect(cx - pw / 2, cy - ph / 2, pw, ph, 4)
+      ctx.fill()
+      ctx.stroke()
+
+      // Text
+      ctx.fillStyle = c.color
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(c.name, cx, cy)
     }
   }
 
@@ -235,22 +522,17 @@ export class Minimap {
     const ctx = this.mapBgCanvas.getContext('2d')
     const size = 1024
 
-    // Dark backdrop tint
     ctx.fillStyle = '#071018'
     ctx.fillRect(0, 0, size, size)
-
-    // Draw map image stretched across bounds
     ctx.drawImage(img, 0, 0, size, size)
 
-    // Blend high-tech tactical contrast layer
     ctx.save()
     ctx.fillStyle = 'rgba(10, 20, 30, 0.15)'
     ctx.fillRect(0, 0, size, size)
 
-    // Subtle coordinate grid markings
     ctx.strokeStyle = 'rgba(0, 240, 255, 0.1)'
     ctx.lineWidth = 1
-    const step = size / 11 // Every 10 meters
+    const step = size / 11
     for (let i = 0; i <= size; i += step) {
       ctx.beginPath()
       ctx.moveTo(i, 0); ctx.lineTo(i, size); ctx.stroke()
@@ -318,18 +600,30 @@ export class Minimap {
         const rect = this.tacticalCanvas.getBoundingClientRect()
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
-        const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
-        const spanX = bounds.maxX - bounds.minX
-        const spanZ = bounds.maxZ - bounds.minZ
-        const wx = bounds.minX + normX * spanX
-        const wz = bounds.minZ + normZ * spanZ
-        this.hoverWorldCoords = { x: wx, z: wz }
 
-        const zone = getZoneAtPosition(wx, wz, this.zones)
-        this.hoverZoneName = zone ? zone.name.toUpperCase() : 'OPEN AREA'
+        const size = 600
+        const pad = 24
+        const availW = size - pad * 2
+        const availH = size - pad * 2
+        const scale = Math.min(availW / 120, availH / 112)
+        const renderedW = 120 * scale
+        const renderedH = 112 * scale
+        const offX = pad + (availW - renderedW) * 0.5
+        const offY = pad + (availH - renderedH) * 0.5
 
-        if (this.tacticalCoordsEl) {
-          this.tacticalCoordsEl.textContent = `X: ${wx.toFixed(1)}, Z: ${wz.toFixed(1)} (${this.hoverZoneName})`
+        const wx = -60 + (mouseX - offX) / scale
+        const wz = -56 + (mouseY - offY) / scale
+
+        if (wx >= -60 && wx <= 60 && wz >= -56 && wz <= 56) {
+          this.hoverWorldCoords = { x: wx, z: wz }
+          const zone = getZoneAtPosition(wx, wz, this.zones)
+          this.hoverZoneName = zone ? (zone.name || zone.id || '').toUpperCase() : 'TACTICAL SECTOR'
+
+          if (this.tacticalCoordsEl) {
+            this.tacticalCoordsEl.textContent = `X: ${wx.toFixed(1)}, Z: ${wz.toFixed(1)} (${this.hoverZoneName})`
+          }
+        } else {
+          this.hoverWorldCoords = null
         }
       })
 
@@ -361,7 +655,6 @@ export class Minimap {
     // Global Key Listener: Press [M] to toggle full tactical map
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyM') {
-        // Prevent toggle if player is typing in an input
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return
         this.toggleTacticalMap()
       } else if (e.code === 'Escape' && this.isExpanded) {
@@ -377,7 +670,7 @@ export class Minimap {
     if (this.btnMode) {
       if (currentMode === 'rotate') {
         this.btnMode.textContent = '🧭'
-        this.btnMode.title = 'Mode: Berputar dengan Karakter (Rotate with Player)'
+        this.btnMode.title = 'Mode: Berputar dengan Karakter (Rotate with Player Aim)'
       } else if (currentMode === 'fixed') {
         this.btnMode.textContent = '⬆️'
         this.btnMode.title = 'Mode: Tetap ke Utara (Fixed North-Up, Centered)'
@@ -450,13 +743,24 @@ export class Minimap {
     const now = performance.now()
     const px = this.player.position.x
     const pz = this.player.position.z
-    const pyaw = this.player.camera ? this.player.camera.rotation.y : 0
+
+    // Compute player aim angle from camera world direction vector
+    // Looking North (-Z): Math.atan2(-1, 0) = -Math.PI / 2
+    // Looking East (+X):  Math.atan2(0, 1)  = 0
+    // Looking South (+Z): Math.atan2(1, 0)  = Math.PI / 2
+    // Looking West (-X):  Math.atan2(0, -1) = Math.PI
+    let aimAngle = -Math.PI / 2
+    if (this.player.camera) {
+      const lookDir = new THREE.Vector3()
+      this.player.camera.getWorldDirection(lookDir)
+      aimAngle = Math.atan2(lookDir.z, lookDir.x)
+    }
 
     // Update Current Location Callout every 150ms
     if (now - this.lastZoneCheckTime > 150) {
       this.lastZoneCheckTime = now
       const zone = getZoneAtPosition(px, pz, this.zones)
-      this.currentZoneName = zone ? zone.name.toUpperCase() : 'TIDE MARKET'
+      this.currentZoneName = zone ? (zone.name || zone.id || '').toUpperCase() : 'TIDE MARKET'
       if (this.zoneBadgeEl) {
         this.zoneBadgeEl.textContent = `📍 ${this.currentZoneName}`
       }
@@ -467,17 +771,17 @@ export class Minimap {
 
     // 1. Render HUD Minimap Radar
     if (this.ctx && this.hudEl && !this.hudEl.classList.contains('hidden')) {
-      this._renderRadar(px, pz, pyaw, now)
+      this._renderRadar(px, pz, aimAngle, now)
     }
 
     // 2. Render Full Tactical Map Modal (if open)
     if (this.isExpanded && this.tacticalCtx) {
-      this._renderTacticalMap(px, pz, pyaw, now)
+      this._renderTacticalMap(px, pz, aimAngle, now)
     }
   }
 
   // ── 1. HUD Radar Rendering ─────────────────────────────
-  _renderRadar(px, pz, pyaw, now) {
+  _renderRadar(px, pz, aimAngle, now) {
     const ctx = this.ctx
     const w = 200
     const h = 200
@@ -490,10 +794,10 @@ export class Minimap {
     const mode = this.modes[this.modeIndex]
     const zoom = this.zooms[this.zoomIndex]
 
-    // Scale calculation
-    let scale = 3.2 * zoom // px per world meter
+    // Scale calculation (pixels per world meter)
+    let scale = 3.2 * zoom
     if (mode === 'full') {
-      scale = (2 * R) / 110 // Whole map fits in radar
+      scale = (2 * R) / 120 // Whole map fits in radar radius
     }
 
     ctx.save()
@@ -504,37 +808,37 @@ export class Minimap {
     ctx.clip()
 
     // Dark radar background
-    ctx.fillStyle = '#09111a'
+    ctx.fillStyle = '#080e18'
     ctx.fillRect(0, 0, w, h)
 
     // Apply orientation & translation
     ctx.translate(cx, cy)
 
-    if (mode === 'rotate') {
-      // Rotate world so player forward direction is straight UP
-      ctx.rotate(pyaw)
+    // In rotate mode: rotate world so player aim direction is always straight UP (-Math.PI / 2)
+    const radarRotation = mode === 'rotate' ? (-aimAngle - Math.PI / 2) : 0
+    if (radarRotation !== 0) {
+      ctx.rotate(radarRotation)
     }
 
     // Draw background map
     ctx.save()
+    // mapBgCanvas has uniform scale 8.0 px/m with map centered at (512, 512)
+    const bgScale = scale / 8.0
+    ctx.scale(bgScale, bgScale)
+
     if (mode === 'full') {
-      // Fixed at (0, 0)
-      const bgScale = scale / (1024 / 110)
-      ctx.scale(bgScale, bgScale)
       ctx.drawImage(this.mapBgCanvas, -512, -512)
     } else {
-      // Centered on player (px, pz)
-      const bgScale = scale / (1024 / 110)
-      const bx = ((px + 55) / 110) * 1024
-      const by = ((pz + 55) / 110) * 1024
-      ctx.scale(bgScale, bgScale)
-      ctx.drawImage(this.mapBgCanvas, -bx, -by)
+      // Player pos on mapBgCanvas: X in [-60, 60] -> 32 + (px + 60)*8, Z in [-56, 56] -> 64 + (pz + 56)*8
+      const playerBgX = 32 + (px + 60) * 8.0
+      const playerBgY = 64 + (pz + 56) * 8.0
+      ctx.drawImage(this.mapBgCanvas, -playerBgX, -playerBgY)
     }
     ctx.restore()
 
     // Draw Concentric Tactical Range Rings (15m & 30m)
     if (mode !== 'full') {
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)'
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)'
       ctx.lineWidth = 1
       ctx.setLineDash([3, 4])
       ctx.beginPath()
@@ -583,7 +887,6 @@ export class Minimap {
 
     // Draw Bomb Sites (A & B) with Edge Clamping
     const sites = this._getSites()
-
     for (const site of sites) {
       const { rx, ry } = worldToRadar(site.x, site.z)
       const dist = Math.hypot(rx, ry)
@@ -598,7 +901,7 @@ export class Minimap {
         drawY = Math.sin(angle) * (R - 14)
       }
 
-      this._drawSiteBadge(ctx, drawX, drawY, site.id, site.color, site.bg, isClamped, mode === 'rotate' ? -pyaw : 0)
+      this._drawSiteBadge(ctx, drawX, drawY, site.id, site.color, site.bg, isClamped, mode === 'rotate' ? -radarRotation : 0)
     }
 
     // Draw Bots / Enemies
@@ -640,9 +943,8 @@ export class Minimap {
         ctx.lineWidth = 1.2
         ctx.stroke()
 
-        // Bot Directional Pip
-        let botYaw = bot.rotation || 0
-        if (mode === 'rotate') botYaw -= pyaw
+        // Bot Directional Pip (local frame inside rotated ctx)
+        const botYaw = bot.rotation || 0
         const pipDist = 7
         const pipX = -Math.sin(botYaw) * pipDist
         const pipY = -Math.cos(botYaw) * pipDist
@@ -656,17 +958,18 @@ export class Minimap {
       ctx.restore()
     }
 
-    // Draw Player
+    // Draw Player Marker & Aim View Area
     let playerDrawX = 0
     let playerDrawY = 0
-    let playerDrawAngle = -Math.PI / 2 // Straight up in rotate mode
+    // In rotate mode: world is rotated by radarRotation, so forward aim direction is always straight UP (-Math.PI / 2)
+    let playerDrawAngle = -Math.PI / 2
 
     if (mode === 'fixed') {
-      playerDrawAngle = -pyaw - Math.PI / 2
+      playerDrawAngle = aimAngle
     } else if (mode === 'full') {
       playerDrawX = px * scale
       playerDrawY = pz * scale
-      playerDrawAngle = -pyaw - Math.PI / 2
+      playerDrawAngle = aimAngle
     }
 
     this._drawPlayerMarker(ctx, playerDrawX, playerDrawY, playerDrawAngle, scale)
@@ -708,7 +1011,7 @@ export class Minimap {
     // North Indicator "N"
     let northAngle = -Math.PI / 2 // North is up by default
     if (mode === 'rotate') {
-      northAngle = -Math.PI / 2 + pyaw
+      northAngle = -Math.PI / 2 + radarRotation
     }
     const nx = cx + Math.cos(northAngle) * (R - 10)
     const ny = cy + Math.sin(northAngle) * (R - 10)
@@ -729,11 +1032,13 @@ export class Minimap {
 
     // Forward Vision Cone (FOV ~70 deg, length ~26m)
     const fovHalf = (35 * Math.PI) / 180
-    const coneLen = Math.min(26 * scale, 90)
+    const coneLen = Math.min(26 * scale, 95)
 
+    // Glowing FOV Wedge Gradient
     const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, coneLen)
-    grad.addColorStop(0.0, 'rgba(0, 240, 255, 0.38)')
-    grad.addColorStop(0.6, 'rgba(0, 240, 255, 0.12)')
+    grad.addColorStop(0.0, 'rgba(0, 240, 255, 0.45)')
+    grad.addColorStop(0.35, 'rgba(0, 240, 255, 0.22)')
+    grad.addColorStop(0.7, 'rgba(0, 240, 255, 0.08)')
     grad.addColorStop(1.0, 'rgba(0, 240, 255, 0.0)')
 
     ctx.fillStyle = grad
@@ -742,6 +1047,16 @@ export class Minimap {
     ctx.arc(0, 0, coneLen, angle - fovHalf, angle + fovHalf)
     ctx.closePath()
     ctx.fill()
+
+    // Crisp Vision Perimeter Edge Rays (Tactical Look)
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)'
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(Math.cos(angle - fovHalf) * coneLen, Math.sin(angle - fovHalf) * coneLen)
+    ctx.moveTo(0, 0)
+    ctx.lineTo(Math.cos(angle + fovHalf) * coneLen, Math.sin(angle + fovHalf) * coneLen)
+    ctx.stroke()
 
     // Player Directional Arrow / Chevron
     ctx.rotate(angle + Math.PI / 2) // Orient arrow pointing up local
@@ -752,15 +1067,21 @@ export class Minimap {
     ctx.arc(0, 0, 8, 0, Math.PI * 2)
     ctx.fill()
 
+    // Player Base Dot
+    ctx.fillStyle = '#00f0ff'
+    ctx.beginPath()
+    ctx.arc(0, 0, 3.5, 0, Math.PI * 2)
+    ctx.fill()
+
     // Chevron Shape
     ctx.fillStyle = '#ffffff'
     ctx.strokeStyle = '#00f0ff'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(0, -9)      // Tip pointing forward
-    ctx.lineTo(6, 6)       // Right wing
-    ctx.lineTo(0, 3)       // Inner notch
-    ctx.lineTo(-6, 6)      // Left wing
+    ctx.moveTo(0, -10)     // Tip pointing forward
+    ctx.lineTo(6.5, 6)     // Right wing
+    ctx.lineTo(0, 2.5)     // Inner notch
+    ctx.lineTo(-6.5, 6)    // Left wing
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
@@ -811,12 +1132,12 @@ export class Minimap {
   }
 
   // ── 4. Full Tactical Map Modal Rendering ([M]) ──────────
-  _renderTacticalMap(px, pz, pyaw, now) {
+  _renderTacticalMap(px, pz, aimAngle, now) {
     const ctx = this.tacticalCtx
     const size = 600
     const pad = 24
-    const mapSize = size - pad * 2 // 552 px
-    const scale = mapSize / 110   // ~5.018 px/m
+    const availW = size - pad * 2 // 552 px
+    const availH = size - pad * 2 // 552 px
 
     ctx.clearRect(0, 0, size, size)
 
@@ -824,75 +1145,71 @@ export class Minimap {
     ctx.fillStyle = '#060e16'
     ctx.fillRect(0, 0, size, size)
 
+    // Map bounds: X [-60, 60] (120m), Z [-56, 56] (112m)
+    // Uniform scale with letterboxing:
+    const scale = Math.min(availW / 120, availH / 112) // 4.6 px/m
+    const renderedW = 120 * scale // 552 px
+    const renderedH = 112 * scale // 515.2 px
+    const offX = pad + (availW - renderedW) * 0.5 // 24 px
+    const offY = pad + (availH - renderedH) * 0.5 // 42.4 px
+
     ctx.save()
-    ctx.translate(pad, pad)
 
-    // Draw background map texture
-    ctx.drawImage(this.mapBgCanvas, 0, 0, mapSize, mapSize)
+    // Draw background map texture from source rect (32, 64, 960, 896) to destination
+    ctx.drawImage(this.mapBgCanvas, 32, 64, 960, 896, offX, offY, renderedW, renderedH)
 
-    // Coordinate grid overlay (every 10 meters)
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)'
+    // World to Tactical Canvas Pos
+    const toTactical = (wx, wz) => {
+      const tx = offX + (wx - (-60)) * scale
+      const tz = offY + (wz - (-56)) * scale
+      return { tx, tz }
+    }
+
+    // Coordinate grid overlay
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.10)'
     ctx.lineWidth = 1
-    const step = mapSize / 11
-    ctx.fillStyle = '#94a3b8'
+    ctx.fillStyle = '#64748b'
     ctx.font = '9px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
-    const spanX = bounds.maxX - bounds.minX
-    const spanZ = bounds.maxZ - bounds.minZ
-
-    for (let i = 0; i <= 12; i++) {
-      const coord = Math.round(bounds.minX + (i / 12) * spanX)
-      const pos = (i / 12) * mapSize
-      // Grid lines
-      ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, mapSize); ctx.stroke()
-      ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(mapSize, pos); ctx.stroke()
-      // Labels along top and left
-      if (i > 0 && i < 12) {
-        ctx.fillText(`${coord}m`, pos, -10)
-        ctx.fillText(`${coord}m`, -14, pos)
+    for (let gx = -60; gx <= 60; gx += 10) {
+      const p = toTactical(gx, -56)
+      ctx.beginPath(); ctx.moveTo(p.tx, offY); ctx.lineTo(p.tx, offY + renderedH); ctx.stroke()
+      if (gx !== -60 && gx !== 60) {
+        ctx.fillText(`${gx}m`, p.tx, offY - 10)
+      }
+    }
+    for (let gz = -56; gz <= 56; gz += 10) {
+      const p = toTactical(-60, gz)
+      ctx.beginPath(); ctx.moveTo(offX, p.tz); ctx.lineTo(offX + renderedW, p.tz); ctx.stroke()
+      if (gz !== -56 && gz !== 56) {
+        ctx.fillText(`${gz}m`, offX - 14, p.tz)
       }
     }
 
-    // World to Tactical Canvas Pos
-    const toTactical = (wx, wz) => {
-      const tx = ((wx - bounds.minX) / spanX) * mapSize
-      const tz = ((wz - bounds.minZ) / spanZ) * mapSize
-      return { tx, tz }
-    }
+    // Highlight hovered zone
+    if (this.hoverZoneName) {
+      for (const z of this.zones) {
+        const zName = (z.name || z.id || '').toUpperCase()
+        if (zName === this.hoverZoneName) {
+          const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
+          const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
+          const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
+          const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
 
-    // Delineate Zones with Subtle Callout Tags
-    for (const z of this.zones) {
-      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
-      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
-      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
-      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+          const p0 = toTactical(minX, minZ)
+          const p1 = toTactical(maxX, maxZ)
+          const zw = p1.tx - p0.tx
+          const zh = p1.tz - p0.tz
 
-      const p0 = toTactical(minX, minZ)
-      const p1 = toTactical(maxX, maxZ)
-      const zw = p1.tx - p0.tx
-      const zh = p1.tz - p0.tz
-
-      // Highlight zone if hovered
-      const zName = z.name || z.id || ''
-      const isHovered = this.hoverZoneName && this.hoverZoneName === zName.toUpperCase()
-      if (isHovered) {
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.18)'
-        ctx.fillRect(p0.tx, p0.tz, zw, zh)
-        ctx.strokeStyle = '#00f0ff'
-        ctx.lineWidth = 2
-        ctx.strokeRect(p0.tx, p0.tz, zw, zh)
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.18)'
+          ctx.fillRect(p0.tx, p0.tz, zw, zh)
+          ctx.strokeStyle = '#00f0ff'
+          ctx.lineWidth = 2
+          ctx.strokeRect(p0.tx, p0.tz, zw, zh)
+        }
       }
-
-      // Zone Title Label in Center
-      const cx = p0.tx + zw / 2
-      const cy = p0.tz + zh / 2
-
-      ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.75)'
-      ctx.font = isHovered ? 'bold 11px sans-serif' : '10px sans-serif'
-      ctx.fillText(zName.toUpperCase(), cx, cy)
     }
 
     // Sites A & B Diamonds
@@ -958,9 +1275,9 @@ export class Minimap {
       ctx.restore()
     }
 
-    // Player Marker on Tactical Map
+    // Player Marker & Vision Area on Tactical Map
     const playerP = toTactical(px, pz)
-    const playerAngle = -pyaw - Math.PI / 2
+    const playerAngle = aimAngle
     this._drawPlayerMarker(ctx, playerP.tx, playerP.tz, playerAngle, scale)
 
     // Cursor Crosshair Guide if mouse inside canvas
@@ -970,9 +1287,9 @@ export class Minimap {
       ctx.lineWidth = 1
       ctx.setLineDash([2, 4])
       ctx.beginPath()
-      ctx.moveTo(cp.tx, 0); ctx.lineTo(cp.tx, mapSize); ctx.stroke()
+      ctx.moveTo(cp.tx, offY); ctx.lineTo(cp.tx, offY + renderedH); ctx.stroke()
       ctx.beginPath()
-      ctx.moveTo(0, cp.tz); ctx.lineTo(mapSize, cp.tz); ctx.stroke()
+      ctx.moveTo(offX, cp.tz); ctx.lineTo(offX + renderedW, cp.tz); ctx.stroke()
       ctx.setLineDash([])
 
       ctx.fillStyle = '#00f0ff'
@@ -981,12 +1298,12 @@ export class Minimap {
       ctx.fill()
     }
 
-    ctx.restore()
-
     // Outer Tactical Border
     ctx.strokeStyle = '#00f0ff'
     ctx.lineWidth = 2
-    ctx.strokeRect(pad - 1, pad - 1, mapSize + 2, mapSize + 2)
+    ctx.strokeRect(offX - 1, offY - 1, renderedW + 2, renderedH + 2)
+
+    ctx.restore()
   }
 
   destroy() {
