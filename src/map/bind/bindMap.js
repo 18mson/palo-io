@@ -94,6 +94,10 @@ export function createBindMap(scene) {
     attackerSpawns,
     defenderSpawns,
     boxes,
+    mapMeshGroup,
+    setLevelDebugMode(enabled) {
+      mapMeshGroup.userData?.setLevelDebugMode?.(enabled)
+    },
     getSpawnPoints(team) {
       if (team === 'attacker') return attackerSpawns
       if (team === 'defender') return defenderSpawns

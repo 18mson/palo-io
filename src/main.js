@@ -1,5 +1,6 @@
 import './style.css'
 import * as THREE             from 'three'
+window.THREE = THREE
 import { GameEngine }          from './core/GameEngine.js'
 import { createBindMap }        from './map/bind/bindMap.js'
 import { PlayerController } from './player/PlayerController.js'
@@ -13,10 +14,11 @@ import { bus }              from './core/EventBus.js'
 import { getSafeSpawnPoint }  from './core/SpawnSystem.js'
 import { AGENT_LIST }         from './agents/AgentRegistry.js'
 import { Minimap }            from './ui/Minimap.js'
+import { BindDebugTools }      from './map/bind/debugTools.js'
 
 // ── State ──────────────────────────────────────────────
 let engine, activeMap, mapCollision, player, bots, dm, hud
-let tracerManager, agentSelect, endScreen, minimap
+let tracerManager, agentSelect, endScreen, minimap, debugTools
 let currentAgent = null
 let currentWeapon = 'vandal'
 let spawnPoints  = []
@@ -30,6 +32,13 @@ function init() {
   agentSelect   = new AgentSelect()
   endScreen     = new EndScreen()
   bots          = new BotSpawner(engine.scene, tracerManager)
+
+  debugTools    = new BindDebugTools({
+    engine,
+    getActiveMap: () => activeMap,
+    getPlayer: () => player
+  })
+  window.debugTools = debugTools
 
   setupMenuButtons()
   setupGameEvents()
@@ -154,6 +163,7 @@ function gameLoop(dt) {
   bots.update(dt, player.position, mapCollision, player.alive, player.velocity)
   dm.update()
   minimap?.update(dt)
+  debugTools?.update(dt)
 }
 
 // ── Game Events ────────────────────────────────────────

@@ -115,30 +115,74 @@ export function buildMapMeshes(boxes) {
     roughness: 0.8
   })
 
+  // ── Debug Level Materials (F5) ───────────────────────────────────────
+  const level0DebugMat = new THREE.MeshStandardMaterial({
+    color: 0x75787d, // Gray for Level 0
+    roughness: 0.88,
+    metalness: 0.05
+  })
+  const level1DebugMat = new THREE.MeshStandardMaterial({
+    color: 0xe67e22, // Orange for Level 1
+    roughness: 0.85,
+    metalness: 0.05
+  })
+  const stairDebugMat = new THREE.MeshStandardMaterial({
+    color: 0xf39c12, // Amber/Orange for Stairs
+    roughness: 0.85,
+    metalness: 0.05
+  })
+
   // ── Build Merged Meshes ───────────────────────────────────────────────
+  const isL1Region = (b) => {
+    // aHeaven bounds [-54, -20, -44, -14], bHookah bounds [24, -4, 34, 4]
+    if (b.maxX >= -54 && b.minX <= -44 && b.maxZ >= -20 && b.minZ <= -14) return true
+    if (b.maxX >= 24 && b.minX <= 34 && b.maxZ >= -4 && b.minZ <= 4) return true
+    return false
+  }
+
   // 1. Walls
-  createMergedMesh(boxes.wallBoxes, wallMat, true, true)
+  const l1Walls = (boxes.wallBoxes || []).filter(isL1Region)
+  const l0Walls = (boxes.wallBoxes || []).filter(b => !isL1Region(b))
+  const l0WallMesh = createMergedMesh(l0Walls, wallMat, true, true)
+  if (l0WallMesh) { l0WallMesh.userData.level = 0; l0WallMesh.userData.origMat = wallMat }
+  const l1WallMesh = createMergedMesh(l1Walls, wallMat, true, true)
+  if (l1WallMesh) { l1WallMesh.userData.level = 1; l1WallMesh.userData.origMat = wallMat }
 
   // 2. Floors (L0 and L1 plinths)
   const l0Floors = (boxes.floorBoxes || []).filter(b => b.type === 'floorL0')
   const l1Floors = (boxes.floorBoxes || []).filter(b => b.type === 'floorL1')
-  createMergedMesh(l0Floors, floorL0Mat, false, true)
-  createMergedMesh(l1Floors, floorL1Mat, true, true)
+  const l0FloorMesh = createMergedMesh(l0Floors, floorL0Mat, false, true)
+  if (l0FloorMesh) { l0FloorMesh.userData.level = 0; l0FloorMesh.userData.origMat = floorL0Mat }
+  const l1FloorMesh = createMergedMesh(l1Floors, floorL1Mat, true, true)
+  if (l1FloorMesh) { l1FloorMesh.userData.level = 1; l1FloorMesh.userData.origMat = floorL1Mat }
 
   // 3. Lintels
-  createMergedMesh(boxes.lintelBoxes, lintelMat, true, true)
+  const lintelMesh = createMergedMesh(boxes.lintelBoxes, lintelMat, true, true)
+  if (lintelMesh) { lintelMesh.userData.level = 0; lintelMesh.userData.origMat = lintelMat }
 
   // 4. Windows (sills and heads)
-  createMergedMesh(boxes.windowBoxes, windowMat, true, true)
+  const windowMesh = createMergedMesh(boxes.windowBoxes, windowMat, true, true)
+  if (windowMesh) { windowMesh.userData.level = 0; windowMesh.userData.origMat = windowMat }
 
   // 5. Stairs
-  createMergedMesh(boxes.stairBoxes, stairMat, true, true)
+  const stairMesh = createMergedMesh(boxes.stairBoxes, stairMat, true, true)
+  if (stairMesh) { stairMesh.userData.level = 'stair'; stairMesh.userData.origMat = stairMat }
 
   // 6. Rails
-  createMergedMesh(boxes.railBoxes, railMat, true, true)
+  const l0Rails = (boxes.railBoxes || []).filter(b => b.bottomY < 3.0)
+  const l1Rails = (boxes.railBoxes || []).filter(b => b.bottomY >= 3.0)
+  const l0RailMesh = createMergedMesh(l0Rails, railMat, true, true)
+  if (l0RailMesh) { l0RailMesh.userData.level = 0; l0RailMesh.userData.origMat = railMat }
+  const l1RailMesh = createMergedMesh(l1Rails, railMat, true, true)
+  if (l1RailMesh) { l1RailMesh.userData.level = 1; l1RailMesh.userData.origMat = railMat }
 
   // 7. Roofs & Eaves
-  createMergedMesh(boxes.roofBoxes, roofMat, true, true)
+  const l0Roofs = (boxes.roofBoxes || []).filter(b => b.bottomY < 6.0)
+  const l1Roofs = (boxes.roofBoxes || []).filter(b => b.bottomY >= 6.0)
+  const l0RoofMesh = createMergedMesh(l0Roofs, roofMat, true, true)
+  if (l0RoofMesh) { l0RoofMesh.userData.level = 0; l0RoofMesh.userData.origMat = roofMat }
+  const l1RoofMesh = createMergedMesh(l1Roofs, roofMat, true, true)
+  if (l1RoofMesh) { l1RoofMesh.userData.level = 1; l1RoofMesh.userData.origMat = roofMat }
 
   // 8. Props partitioned by type
   const crates = (boxes.propBoxes || []).filter(p => p.propType === 'crate')
@@ -147,11 +191,33 @@ export function buildMapMeshes(boxes) {
   const planters = (boxes.propBoxes || []).filter(p => p.propType === 'planter')
   const stalls = (boxes.propBoxes || []).filter(p => p.propType === 'stall')
 
-  createMergedMesh(crates, crateMat, true, true)
-  createMergedMesh(containers, containerMat, true, true)
-  createMergedMesh(pillars, pillarMat, true, true)
-  createMergedMesh(planters, planterMat, true, true)
-  createMergedMesh(stalls, stallMat, true, true)
+  const tagProps = (m, boxSubset) => {
+    if (!m) return
+    const isL1 = boxSubset.some(b => b.bottomY >= 3.0)
+    m.userData.level = isL1 ? 1 : 0
+    m.userData.origMat = m.material
+  }
+
+  tagProps(createMergedMesh(crates, crateMat, true, true), crates)
+  tagProps(createMergedMesh(containers, containerMat, true, true), containers)
+  tagProps(createMergedMesh(pillars, pillarMat, true, true), pillars)
+  tagProps(createMergedMesh(planters, planterMat, true, true), planters)
+  tagProps(createMergedMesh(stalls, stallMat, true, true), stalls)
+
+  // Attach setLevelDebugMode method to root group
+  group.userData.setLevelDebugMode = (enabled) => {
+    group.traverse((child) => {
+      if (child.isMesh && child.userData.level !== undefined) {
+        if (enabled) {
+          if (child.userData.level === 1) child.material = level1DebugMat
+          else if (child.userData.level === 'stair') child.material = stairDebugMat
+          else child.material = level0DebugMat
+        } else {
+          child.material = child.userData.origMat || child.material
+        }
+      }
+    })
+  }
 
   // 9. Plant Zones (soft accent markers)
   for (const p of boxes.plantBoxes || []) {
