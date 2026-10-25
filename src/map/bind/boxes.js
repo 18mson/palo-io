@@ -442,6 +442,7 @@ export function buildMapBoxes(layout) {
   // Walls, floor plinths, lintels, stairs, props, rails, window sills/heads
   const allColliders = [
     ...wallBoxes,
+    ...floorBoxes,
     ...lintelBoxes,
     ...windowBoxes,
     ...stairBoxes,

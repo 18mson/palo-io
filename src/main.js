@@ -208,6 +208,10 @@ function setupGameEvents() {
   // Click to play / respawn
   bus.on('player:click_to_play', () => {
     if (!player) return
+    engine.setOverrideCamera(null)
+    hud?.show()
+    document.getElementById('play-overlay')?.classList.add('hidden')
+    document.getElementById('minimap-hud')?.classList.remove('hidden')
     if (!player.alive) {
       const livingBots = bots ? bots.getLiving() : []
       const sp = getSafeSpawnPoint(spawnPoints, livingBots, 22)
@@ -323,9 +327,6 @@ window.CAMERA_PRESETS = CAMERA_PRESETS
 window.setCameraPreset = (name) => {
   const p = CAMERA_PRESETS[name]
   if (!p || !engine) return false
-  hud?.hide()
-  document.getElementById('play-overlay')?.classList.add('hidden')
-  document.getElementById('minimap-hud')?.classList.add('hidden')
   if (player) {
     player.teleportTo(p.pos[0], p.pos[1] - 0.72, p.pos[2])
     const dir = new THREE.Vector3().subVectors(new THREE.Vector3(...p.target), new THREE.Vector3(...p.pos)).normalize()
@@ -333,11 +334,10 @@ window.setCameraPreset = (name) => {
     player.camera.rotation.order = 'YXZ'
     player.camera.rotation.set(0, yaw, 0)
   }
-  const presetCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  presetCam.position.set(p.pos[0], p.pos[1], p.pos[2])
-  presetCam.lookAt(p.target[0], p.target[1], p.target[2])
-  presetCam.updateMatrixWorld()
-  engine.setOverrideCamera(presetCam)
+  engine.setOverrideCamera(null)
+  hud?.show()
+  document.getElementById('play-overlay')?.classList.add('hidden')
+  document.getElementById('minimap-hud')?.classList.remove('hidden')
   return true
 }
 
@@ -347,6 +347,9 @@ const autoPlay = params.get('play') || params.get('autostart')
 const showTactical = params.get('tactical') === '1'
 
 if (viewPreset && CAMERA_PRESETS[viewPreset]) {
+  if (window.history?.replaceState) {
+    window.history.replaceState({}, '', window.location.pathname)
+  }
   startGame(AGENT_LIST[0], 'vandal', false).then(() => {
     document.getElementById('main-menu')?.classList.remove('active')
     window.setCameraPreset(viewPreset)

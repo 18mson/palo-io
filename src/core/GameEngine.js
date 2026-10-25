@@ -66,7 +66,9 @@ export class GameEngine {
 
     const gameEl = document.getElementById('game-container')
     gameEl.addEventListener('click', (e) => {
-      if (this.overrideCamera) return // Prevent locking cursor in top-down / debug override modes
+      if (this.overrideCamera) {
+        this.setOverrideCamera(null)
+      }
       const overlay = document.getElementById('play-overlay')
       if (overlay && !overlay.classList.contains('hidden')) return
       if (e.target.closest('button') || e.target.closest('#po-play-btn') || e.target.closest('input')) return
