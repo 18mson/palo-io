@@ -3,7 +3,7 @@ import { bus } from '../core/EventBus.js'
 import { getWeapon } from '../weapons/WeaponRegistry.js'
 import { sounds } from '../audio/SoundSystem.js'
 import { AgentModelBuilder } from '../characters/AgentModelBuilder.js'
-import { createContactShadowTexture } from '../map/MapTextures.js'
+import { createContactShadowTexture } from '../weapons/WeaponTextures.js'
 
 const BOT_SPEED     = 5.8
 const SHOOT_RANGE   = 32

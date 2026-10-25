@@ -286,3 +286,46 @@ export function createScopeLensTexture() {
     return texture
   })
 }
+
+/**
+ * Procedural Muzzle Flash Texture
+ */
+export function createMuzzleFlashTexture() {
+  return getCached('muzzle_flash', () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 32
+    canvas.height = 32
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(14, 0, 4, 32)
+    ctx.fillRect(0, 14, 32, 4)
+    ctx.fillStyle = '#f59e0b'
+    ctx.fillRect(12, 12, 8, 8)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.magFilter = THREE.NearestFilter
+    tex.minFilter = THREE.NearestFilter
+    tex.generateMipmaps = false
+    tex.needsUpdate = true
+    return tex
+  })
+}
+
+/**
+ * Procedural Contact Shadow Texture
+ */
+export function createContactShadowTexture() {
+  return getCached('contact_shadow', () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 16
+    canvas.height = 16
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
+    ctx.fillRect(2, 2, 12, 12)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.magFilter = THREE.NearestFilter
+    tex.minFilter = THREE.NearestFilter
+    tex.generateMipmaps = false
+    tex.needsUpdate = true
+    return tex
+  })
+}

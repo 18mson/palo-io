@@ -2,8 +2,8 @@ import * as THREE from 'three'
 import { getWeapon } from '../weapons/WeaponRegistry.js'
 import { bus } from '../core/EventBus.js'
 import { sounds } from '../audio/SoundSystem.js'
-import { createMuzzleFlashTexture } from '../map/MapTextures.js'
 import {
+  createMuzzleFlashTexture,
   createCarbonFiberTexture,
   createBrushedSteelTexture,
   createPolymerGripTexture,

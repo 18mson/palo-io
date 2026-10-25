@@ -14,7 +14,7 @@ import { makeDraggable } from './draggable.js'
 
 export function getZoneAtPosition(x, z, zones = []) {
   if (!zones || zones.length === 0) return null
-  // Sort smallest area first for more specific sub-zones (e.g. aHeaven vs siteA)
+  // Sort smallest area first for more specific sub-zones
   const sorted = [...zones].sort((a, b) => {
     const areaA = (a.maxX - a.minX) * (a.maxZ - a.minZ)
     const areaB = (b.maxX - b.minX) * (b.maxZ - b.minZ)
@@ -34,8 +34,8 @@ export class Minimap {
     this.bots       = options.bots || null
     this.zones      = options.zones || []
     this.engine     = options.engine || null
-    this.mapBounds  = options.mapBounds || { minX: -55, maxX: 55, minZ: -55, maxZ: 55 }
-    this.imageSrc   = options.imageSrc || '/docs/reference/topdown.png'
+    this.mapBounds  = options.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
+    this.imageSrc   = options.imageSrc || null
 
     // Configuration & State
     this.modes = ['rotate', 'fixed', 'full']
@@ -53,7 +53,7 @@ export class Minimap {
     }
 
     this.isExpanded         = false
-    this.currentZoneName    = 'ASCENT'
+    this.currentZoneName    = 'TIDE MARKET'
     this.hoverWorldCoords   = null
     this.hoverZoneName      = null
     this.pingMarker         = null // { x, z, time, color }
@@ -79,13 +79,13 @@ export class Minimap {
     this.tacticalCtx = null
     this._setupCanvases()
 
-    // Offscreen Canvas for caching blueprint & vector map
+    // Offscreen Canvas for caching map image & vector map
     this.mapBgCanvas = document.createElement('canvas')
     this.mapBgCanvas.width = 1024
     this.mapBgCanvas.height = 1024
     this.bgLoaded = false
     this._buildProceduralMapBase()
-    this._loadBlueprintImage()
+    this._loadMapImage()
 
     // Event Bindings
     this._setupEvents()
@@ -104,7 +104,7 @@ export class Minimap {
     this.zones = zones || []
     this._buildProceduralMapBase()
     if (this.bgImage) {
-      this._drawBlueprintOnBg(this.bgImage)
+      this._drawMapImageOnBg(this.bgImage)
     }
   }
 
@@ -133,6 +133,27 @@ export class Minimap {
     }
   }
 
+  _getSites() {
+    const list = []
+    for (const z of this.zones) {
+      const zid = (z.id || '').toLowerCase()
+      const zname = (z.name || '').toUpperCase()
+      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
+      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
+      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
+      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+      const cx = (minX + maxX) / 2
+      const cz = (minZ + maxZ) / 2
+
+      if (zid === 'asite' || (zid.includes('site') && zid.includes('a')) || zname === 'A SITE') {
+        list.push({ id: 'A', x: cx, z: cz, color: '#06b6d4', bg: '#083344' })
+      } else if (zid === 'bsite' || (zid.includes('site') && zid.includes('b')) || zname === 'B SITE') {
+        list.push({ id: 'B', x: cx, z: cz, color: '#f59e0b', bg: '#451a03' })
+      }
+    }
+    return list
+  }
+
   // ── Procedural Vector Base Map (Instant Fallback) ──────
   _buildProceduralMapBase() {
     const ctx = this.mapBgCanvas.getContext('2d')
@@ -143,62 +164,41 @@ export class Minimap {
     ctx.fillStyle = '#060d14'
     ctx.fillRect(0, 0, size, size)
 
-    // Island outline approximation
+    const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
+    const spanX = bounds.maxX - bounds.minX
+    const spanZ = bounds.maxZ - bounds.minZ
+
+    // Border
     ctx.save()
     ctx.fillStyle = '#0f1a24'
     ctx.strokeStyle = '#00f0ff33'
     ctx.lineWidth = 4
-
-    // Rounded polygon representing the island landmass
-    ctx.beginPath()
-    const islandPoly = [
-      [-48, -48], [24, -54], [48, -35], [52, 20], [38, 48], [-15, 52], [-52, 30], [-52, -20]
-    ]
-    islandPoly.forEach(([wx, wz], idx) => {
-      const px = ((wx + 55) / 110) * size
-      const py = ((wz + 55) / 110) * size
-      if (idx === 0) ctx.moveTo(px, py)
-      else ctx.lineTo(px, py)
-    })
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
+    ctx.strokeRect(16, 16, size - 32, size - 32)
     ctx.restore()
 
-    // Draw Water Trench (Mid Canal)
-    const midCanalZone = this.zones.find(z => z.id === 'midCanal')
-    if (midCanalZone) {
-      ctx.fillStyle = '#0284c7'
-      const x0 = ((midCanalZone.minX + 55) / 110) * size
-      const y0 = ((midCanalZone.minZ + 55) / 110) * size
-      const w  = ((midCanalZone.maxX - midCanalZone.minX) / 110) * size
-      const h  = ((midCanalZone.maxZ - midCanalZone.minZ) / 110) * size
-      ctx.fillRect(x0, y0, w, h)
-    }
-
-    // Draw Zone Outlines & Soft Fills
+    // Draw Zone Outlines & Soft Fills from this.zones
     for (const z of this.zones) {
-      const x0 = ((z.minX + 55) / 110) * size
-      const y0 = ((z.minZ + 55) / 110) * size
-      const w  = ((z.maxX - z.minX) / 110) * size
-      const h  = ((z.maxZ - z.minZ) / 110) * size
+      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
+      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
+      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
+      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+
+      const x0 = ((minX - bounds.minX) / spanX) * size
+      const y0 = ((minZ - bounds.minZ) / spanZ) * size
+      const w  = ((maxX - minX) / spanX) * size
+      const h  = ((maxZ - minZ) / spanZ) * size
 
       let fillColor = 'rgba(255, 255, 255, 0.03)'
       let strokeColor = 'rgba(255, 255, 255, 0.15)'
 
-      if (z.id.includes('siteA') || z.id.includes('aHeaven') || z.id.includes('aHell')) {
-        fillColor = 'rgba(6, 182, 212, 0.08)'
-        strokeColor = 'rgba(6, 182, 212, 0.4)'
-      } else if (z.id.includes('siteB') || z.id.includes('bHeaven') || z.id.includes('bHell')) {
-        fillColor = 'rgba(245, 158, 11, 0.08)'
-        strokeColor = 'rgba(245, 158, 11, 0.4)'
-      } else if (z.id.includes('mid')) {
-        fillColor = 'rgba(56, 189, 248, 0.05)'
-        strokeColor = 'rgba(56, 189, 248, 0.25)'
-      } else if (z.id.includes('attacker')) {
+      const zid = (z.id || '').toLowerCase()
+      if (zid.includes('site') || zid.includes('plant') || zid.includes('heaven')) {
+        fillColor = zid.includes('a') ? 'rgba(6, 182, 212, 0.08)' : 'rgba(245, 158, 11, 0.08)'
+        strokeColor = zid.includes('a') ? 'rgba(6, 182, 212, 0.4)' : 'rgba(245, 158, 11, 0.4)'
+      } else if (zid.includes('attacker') || zid.includes('spawn')) {
         fillColor = 'rgba(34, 197, 94, 0.06)'
         strokeColor = 'rgba(34, 197, 94, 0.3)'
-      } else if (z.id.includes('defender')) {
+      } else if (zid.includes('defender')) {
         fillColor = 'rgba(239, 68, 68, 0.06)'
         strokeColor = 'rgba(239, 68, 68, 0.3)'
       }
@@ -211,22 +211,27 @@ export class Minimap {
     }
   }
 
-  // ── Load High-Res Blueprint Image ──────────────────────
-  _loadBlueprintImage() {
+  // ── Load Map Image ──────────────────────────────────────
+  _loadMapImage() {
+    if (!this.imageSrc) {
+      this.bgLoaded = true
+      return
+    }
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       this.bgImage = img
-      this._drawBlueprintOnBg(img)
+      this._drawMapImageOnBg(img)
       this.bgLoaded = true
     }
     img.onerror = () => {
-      console.warn('Minimap: Failed to load blueprint texture, using procedural base.')
+      console.warn('Minimap: Failed to load map image texture, using procedural base.')
+      this.bgLoaded = true
     }
     img.src = this.imageSrc
   }
 
-  _drawBlueprintOnBg(img) {
+  _drawMapImageOnBg(img) {
     const ctx = this.mapBgCanvas.getContext('2d')
     const size = 1024
 
@@ -234,7 +239,7 @@ export class Minimap {
     ctx.fillStyle = '#071018'
     ctx.fillRect(0, 0, size, size)
 
-    // Draw blueprint image stretched across 110x110m bounds
+    // Draw map image stretched across bounds
     ctx.drawImage(img, 0, 0, size, size)
 
     // Blend high-tech tactical contrast layer
@@ -313,10 +318,11 @@ export class Minimap {
         const rect = this.tacticalCanvas.getBoundingClientRect()
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
-        const normX = mouseX / rect.width
-        const normZ = mouseY / rect.height
-        const wx = -55 + normX * 110
-        const wz = -55 + normZ * 110
+        const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
+        const spanX = bounds.maxX - bounds.minX
+        const spanZ = bounds.maxZ - bounds.minZ
+        const wx = bounds.minX + normX * spanX
+        const wz = bounds.minZ + normZ * spanZ
         this.hoverWorldCoords = { x: wx, z: wz }
 
         const zone = getZoneAtPosition(wx, wz, this.zones)
@@ -339,8 +345,8 @@ export class Minimap {
         if (!this.hoverWorldCoords) return
         const { x, z } = this.hoverWorldCoords
 
-        // Shift+Click or in Explorer Mode: Teleport
-        if (e.shiftKey || (window.mapExplorer && window.mapExplorer.isActive)) {
+        // Shift+Click: Teleport
+        if (e.shiftKey) {
           if (this.player && typeof this.player.teleportTo === 'function') {
             this.player.teleportTo(x, 1.2, z)
             this._showToast(`TELEPORTED TO (${x.toFixed(1)}, ${z.toFixed(1)})`)
@@ -450,7 +456,7 @@ export class Minimap {
     if (now - this.lastZoneCheckTime > 150) {
       this.lastZoneCheckTime = now
       const zone = getZoneAtPosition(px, pz, this.zones)
-      this.currentZoneName = zone ? zone.name.toUpperCase() : 'ASCENT'
+      this.currentZoneName = zone ? zone.name.toUpperCase() : 'TIDE MARKET'
       if (this.zoneBadgeEl) {
         this.zoneBadgeEl.textContent = `📍 ${this.currentZoneName}`
       }
@@ -576,10 +582,7 @@ export class Minimap {
     }
 
     // Draw Bomb Sites (A & B) with Edge Clamping
-    const sites = [
-      { id: 'A', x: -35.0, z: -1.5, color: '#06b6d4', bg: '#083344' },
-      { id: 'B', x: 43.5,  z:  0.0, color: '#f59e0b', bg: '#451a03' }
-    ]
+    const sites = this._getSites()
 
     for (const site of sites) {
       const { rx, ry } = worldToRadar(site.x, site.z)
@@ -824,7 +827,7 @@ export class Minimap {
     ctx.save()
     ctx.translate(pad, pad)
 
-    // Draw background blueprint
+    // Draw background map texture
     ctx.drawImage(this.mapBgCanvas, 0, 0, mapSize, mapSize)
 
     // Coordinate grid overlay (every 10 meters)
@@ -836,14 +839,18 @@ export class Minimap {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    for (let i = 0; i <= 11; i++) {
-      const coord = -55 + i * 10
-      const pos = i * step
+    const bounds = this.mapBounds || { minX: -60, maxX: 60, minZ: -56, maxZ: 56 }
+    const spanX = bounds.maxX - bounds.minX
+    const spanZ = bounds.maxZ - bounds.minZ
+
+    for (let i = 0; i <= 12; i++) {
+      const coord = Math.round(bounds.minX + (i / 12) * spanX)
+      const pos = (i / 12) * mapSize
       // Grid lines
       ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, mapSize); ctx.stroke()
       ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(mapSize, pos); ctx.stroke()
       // Labels along top and left
-      if (i > 0 && i < 11) {
+      if (i > 0 && i < 12) {
         ctx.fillText(`${coord}m`, pos, -10)
         ctx.fillText(`${coord}m`, -14, pos)
       }
@@ -851,20 +858,26 @@ export class Minimap {
 
     // World to Tactical Canvas Pos
     const toTactical = (wx, wz) => {
-      const tx = ((wx + 55) / 110) * mapSize
-      const tz = ((wz + 55) / 110) * mapSize
+      const tx = ((wx - bounds.minX) / spanX) * mapSize
+      const tz = ((wz - bounds.minZ) / spanZ) * mapSize
       return { tx, tz }
     }
 
     // Delineate Zones with Subtle Callout Tags
     for (const z of this.zones) {
-      const p0 = toTactical(z.minX, z.minZ)
-      const p1 = toTactical(z.maxX, z.maxZ)
+      const minX = z.minX ?? (z.rect ? z.rect[0] : 0)
+      const minZ = z.minZ ?? (z.rect ? z.rect[1] : 0)
+      const maxX = z.maxX ?? (z.rect ? z.rect[2] : 0)
+      const maxZ = z.maxZ ?? (z.rect ? z.rect[3] : 0)
+
+      const p0 = toTactical(minX, minZ)
+      const p1 = toTactical(maxX, maxZ)
       const zw = p1.tx - p0.tx
       const zh = p1.tz - p0.tz
 
       // Highlight zone if hovered
-      const isHovered = this.hoverZoneName && this.hoverZoneName === z.name.toUpperCase()
+      const zName = z.name || z.id || ''
+      const isHovered = this.hoverZoneName && this.hoverZoneName === zName.toUpperCase()
       if (isHovered) {
         ctx.fillStyle = 'rgba(0, 240, 255, 0.18)'
         ctx.fillRect(p0.tx, p0.tz, zw, zh)
@@ -879,14 +892,11 @@ export class Minimap {
 
       ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.75)'
       ctx.font = isHovered ? 'bold 11px sans-serif' : '10px sans-serif'
-      ctx.fillText(z.name.toUpperCase(), cx, cy)
+      ctx.fillText(zName.toUpperCase(), cx, cy)
     }
 
     // Sites A & B Diamonds
-    const sites = [
-      { id: 'A', x: -35.0, z: -1.5, color: '#06b6d4', bg: '#083344' },
-      { id: 'B', x: 43.5,  z:  0.0, color: '#f59e0b', bg: '#451a03' }
-    ]
+    const sites = this._getSites()
     for (const s of sites) {
       const p = toTactical(s.x, s.z)
       this._drawSiteBadge(ctx, p.tx, p.tz, s.id, s.color, s.bg, false, 0)

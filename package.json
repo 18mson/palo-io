@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "validate": "node tools/validate-map.mjs"
+    "validate": "node tools/validate-bind.mjs docs/map/bind.layout.json",
+    "sync:map": "node -e \"import('fs').then(fs => { fs.mkdirSync('src/map/bind', { recursive: true }); fs.copyFileSync('docs/map/bind.layout.json', 'src/map/bind/bind.layout.json'); console.log('Synced bind.layout.json to src/map/bind/'); })\""
   },
   "dependencies": {
     "three": "^0.169.0"
