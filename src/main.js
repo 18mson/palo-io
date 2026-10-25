@@ -1,7 +1,7 @@
 import './style.css'
 import * as THREE             from 'three'
-import { GameEngine }       from './core/GameEngine.js'
-import { createTemporaryMap } from './map/temporaryMap.js'
+import { GameEngine }          from './core/GameEngine.js'
+import { createBindMap }        from './map/bind/bindMap.js'
 import { PlayerController } from './player/PlayerController.js'
 import { BotSpawner }       from './bot/BotSpawner.js'
 import { TracerManager }    from './effects/TracerManager.js'
@@ -78,15 +78,15 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
 
   engine.resize()
 
-  // Load temporary stub map
+  // Load Bind map
   activeMap?.destroy?.()
-  activeMap = createTemporaryMap(engine.scene)
+  activeMap = createBindMap(engine.scene)
   spawnPoints = activeMap.getSpawnPoints()
   mapCollision = activeMap.collision
 
   // Player with tracer manager and dedicated viewmodel overlay camera
-  // Player spawn at (0, 1.7, 48) facing -z: startPos.y = 0.98 so camera eye height (0.98 + 0.72) is 1.7
-  const startPos = spawnPoints[0]?.clone() || new THREE.Vector3(0, 0.98, 48)
+  // Player spawns at attacker spawn (0, 0.98, 48) facing -z (yaw 0). Eye height will be 1.70.
+  const startPos = activeMap.attackerSpawns?.[0]?.clone() || new THREE.Vector3(0, 0.98, 48)
   player = new PlayerController(engine.camera, mapCollision, engine.scene, tracerManager, engine.viewmodelCamera)
   player.setAgent(agent)
   player.position.copy(startPos)
@@ -99,8 +99,9 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
   player.switchSlot(0)
 
   // Bots with tracer manager and safe spawn points
+  const botSpawns = [...(activeMap.defenderSpawns || []), ...spawnPoints.slice(activeMap.attackerSpawns?.length || 0)]
   bots.setTracerManager(tracerManager)
-  bots.spawn(BOT_COUNT, spawnPoints, player)
+  bots.spawn(BOT_COUNT, botSpawns, player)
 
   // Expose player hook
   window.player = player
@@ -128,7 +129,7 @@ async function startGame(agent, chosenWeaponId = 'vandal', isExploration = false
   minimap = new Minimap({
     player,
     bots,
-    zones: [],
+    zones: activeMap?.getZones?.() || [],
     mapBounds: { minX: -60, maxX: 60, minZ: -56, maxZ: 56 },
     engine
   })
@@ -147,7 +148,7 @@ function gameLoop(dt) {
   if (!player || !bots) return
 
   const focusPos = engine.overrideCamera ? engine.overrideCamera.position : (player ? player.position : null)
-  activeMap?.update?.(performance.now() * 0.001, focusPos)
+  activeMap?.update?.(performance.now() * 0.001, focusPos, player, bots?.getAll?.())
   tracerManager.update(dt)
   player.update(dt, bots.getAll())
   bots.update(dt, player.position, mapCollision, player.alive, player.velocity)
@@ -311,10 +312,34 @@ function endGame(stats) {
 init()
 
 const CAMERA_PRESETS = {
-  overview: { pos: [0, 45, 60], target: [0, 0, 0] },
-  spawn:    { pos: [0, 1.7, 48], target: [0, 1.7, 0] }
+  a_site:         { pos: [-27, 1.65, -1],  target: [-27, 1.65, -15] }, // View from A-short looking into A-site (north)
+  b_site:         { pos: [0, 1.65, -34],   target: [0, 1.65, -15] },   // View from Market looking south
+  overview:       { pos: [0, 65, 55],      target: [0, 0, 0] },
+  spawn_attacker: { pos: [0, 1.65, 48],    target: [0, 1.65, 0] },
+  spawn_defender: { pos: [0, 1.65, -48],   target: [0, 1.65, 0] }
 }
 window.CAMERA_PRESETS = CAMERA_PRESETS
+
+window.setCameraPreset = (name) => {
+  const p = CAMERA_PRESETS[name]
+  if (!p || !engine) return false
+  hud?.hide()
+  document.getElementById('play-overlay')?.classList.add('hidden')
+  document.getElementById('minimap-hud')?.classList.add('hidden')
+  if (player) {
+    player.teleportTo(p.pos[0], p.pos[1] - 0.72, p.pos[2])
+    const dir = new THREE.Vector3().subVectors(new THREE.Vector3(...p.target), new THREE.Vector3(...p.pos)).normalize()
+    const yaw = Math.atan2(-dir.x, -dir.z)
+    player.camera.rotation.order = 'YXZ'
+    player.camera.rotation.set(0, yaw, 0)
+  }
+  const presetCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+  presetCam.position.set(p.pos[0], p.pos[1], p.pos[2])
+  presetCam.lookAt(p.target[0], p.target[1], p.target[2])
+  presetCam.updateMatrixWorld()
+  engine.setOverrideCamera(presetCam)
+  return true
+}
 
 const params = new URLSearchParams(window.location.search)
 const viewPreset = params.get('view') || params.get('preset')
@@ -322,19 +347,9 @@ const autoPlay = params.get('play') || params.get('autostart')
 const showTactical = params.get('tactical') === '1'
 
 if (viewPreset && CAMERA_PRESETS[viewPreset]) {
-  const p = CAMERA_PRESETS[viewPreset]
   startGame(AGENT_LIST[0], 'vandal', false).then(() => {
     document.getElementById('main-menu')?.classList.remove('active')
-    document.getElementById('play-overlay')?.classList.add('hidden')
-    hud.hide()
-
-    const presetCam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-    presetCam.position.set(p.pos[0], p.pos[1], p.pos[2])
-    presetCam.lookAt(p.target[0], p.target[1], p.target[2])
-    presetCam.updateMatrixWorld()
-    engine.setOverrideCamera(presetCam)
-
-    window.__READY_FOR_SCREENSHOT = true
+    window.setCameraPreset(viewPreset)
   })
 } else if (autoPlay) {
   startGame(AGENT_LIST[0], 'vandal', false).then(() => {
