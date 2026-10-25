@@ -161,8 +161,8 @@ async function run() {
   await sleep(600)
   await cdp.captureScreenshot('minimap_aim_north_rotate.png')
 
-  // 2. Rotate aim to East (+X, yaw = -Math.PI / 2)
-  console.log('Testing aim direction: East (yaw = -PI/2)...')
+  // 2. Rotate aim to East (+X, yaw = -Math.PI / 2) in ROTATE mode
+  console.log('Testing aim direction: East (yaw = -PI/2) in rotate mode...')
   await cdp.evaluate(`(() => {
     if (window.player && window.player.camera) {
       window.player.camera.rotation.order = 'YXZ';
@@ -172,6 +172,30 @@ async function run() {
   })()`)
   await sleep(600)
   await cdp.captureScreenshot('minimap_aim_east_rotate.png')
+
+  // 2b. Rotate aim to South (+Z, yaw = Math.PI) in ROTATE mode
+  console.log('Testing aim direction: South (yaw = PI) in rotate mode...')
+  await cdp.evaluate(`(() => {
+    if (window.player && window.player.camera) {
+      window.player.camera.rotation.order = 'YXZ';
+      window.player.camera.rotation.set(0, Math.PI, 0);
+      window.player.camera.updateMatrixWorld(true);
+    }
+  })()`)
+  await sleep(600)
+  await cdp.captureScreenshot('minimap_aim_south_rotate.png')
+
+  // 2c. Rotate aim to West (-X, yaw = Math.PI / 2) in ROTATE mode
+  console.log('Testing aim direction: West (yaw = PI/2) in rotate mode...')
+  await cdp.evaluate(`(() => {
+    if (window.player && window.player.camera) {
+      window.player.camera.rotation.order = 'YXZ';
+      window.player.camera.rotation.set(0, Math.PI / 2, 0);
+      window.player.camera.updateMatrixWorld(true);
+    }
+  })()`)
+  await sleep(600)
+  await cdp.captureScreenshot('minimap_aim_west_rotate.png')
 
   // 3. Switch to FIXED mode (North-Up) aiming East
   console.log('Testing FIXED mode (aiming East)...')

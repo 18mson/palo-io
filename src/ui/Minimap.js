@@ -814,6 +814,9 @@ export class Minimap {
     // Apply orientation & translation
     ctx.translate(cx, cy)
 
+    // Save unrotated state centered at (cx, cy)
+    ctx.save()
+
     // In rotate mode: rotate world so player aim direction is always straight UP (-Math.PI / 2)
     const radarRotation = mode === 'rotate' ? (-aimAngle - Math.PI / 2) : 0
     if (radarRotation !== 0) {
@@ -958,10 +961,13 @@ export class Minimap {
       ctx.restore()
     }
 
-    // Draw Player Marker & Aim View Area
+    // Restore world rotation so coordinate space returns to unrotated screen space at (cx, cy)
+    ctx.restore()
+
+    // Draw Player Marker & Aim View Area in screen space
     let playerDrawX = 0
     let playerDrawY = 0
-    // In rotate mode: world is rotated by radarRotation, so forward aim direction is always straight UP (-Math.PI / 2)
+    // In rotate mode: player is centered and aim is ALWAYS straight UP (-Math.PI / 2) on screen!
     let playerDrawAngle = -Math.PI / 2
 
     if (mode === 'fixed') {
@@ -974,7 +980,7 @@ export class Minimap {
 
     this._drawPlayerMarker(ctx, playerDrawX, playerDrawY, playerDrawAngle, scale)
 
-    ctx.restore() // Restore from clip & rotation
+    ctx.restore() // Restore circular clip & translation back to canvas root
 
     // ── Radar Outer Reticle & Compass Needle ───────────────
     ctx.save()
