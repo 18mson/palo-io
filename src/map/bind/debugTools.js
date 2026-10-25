@@ -21,6 +21,44 @@ export const CAMERA_CHECKPOINTS = [
 ]
 
 /**
+ * Short Callout Names matching docs/map/bind_topdown.png.
+ */
+export const CALLOUT_SHORT_NAMES = {
+  attackerSpawn: 'ATTACKER SPAWN',
+  defenderSpawn: 'DEFENDER SPAWN',
+  aLobby: 'A LOBBY',
+  bLobby: 'B LOBBY',
+  attackerCave: 'CAVE',
+  aShort1: 'A SHORT',
+  aTeleRoom: 'A TELE',
+  aShort2: 'A SHORT',
+  aShowers: 'A SHOWERS',
+  aBath1: 'A BATH',
+  aBath2: 'A BATH',
+  aBath3: 'A BATH',
+  aSite: 'A SITE',
+  aHeaven: 'A HEAVEN (L1)',
+  aCubby: 'CUBBY',
+  aCT: 'A CT',
+  aExit: 'A EXIT',
+  aLamps1: 'LAMPS',
+  aLamps2: 'LAMPS',
+  market: 'MARKET',
+  dsLink: 'LINK',
+  bLink: 'B LINK',
+  bElbow: 'B ELBOW',
+  bSite: 'B SITE',
+  bHall: 'B HALL',
+  bExit: 'B EXIT',
+  bGarden: 'B GARDEN',
+  bHookah: 'HOOKAH (L1)',
+  bShortRoom: 'B SHORT',
+  bShort1: 'B SHORT',
+  bLong1: 'B LONG',
+  bLong2: 'B LONG'
+}
+
+/**
  * Debug Tools for the Bind Map ("Tide Market").
  * Handles F4 (Top-Down Ortho View), F5 (Level Colors & Topology),
  * F6 (Camera Checkpoints Teleport Panel), and F7 (Collision Wireframes).
@@ -298,6 +336,9 @@ export class BindDebugTools {
     // Handle cursor tracking on canvas
     this.topdownCanvas.addEventListener('mousemove', (e) => this._onCanvasMouseMove(e))
     this.topdownCanvas.addEventListener('click', (e) => this._onCanvasClick(e))
+    window.addEventListener('resize', () => {
+      if (this.f4Active) this._renderTopdownMap()
+    })
 
     // 2. F5 Level Topology Panel Element
     this.f5Panel = document.createElement('div')
@@ -355,13 +396,31 @@ export class BindDebugTools {
 
     if (this.f4Active) {
       this.f4Container.classList.add('active')
-      // Create Orthographic Camera in Three.js
+      // Create Orthographic Camera in Three.js with uniform scale and letterboxing
+      const aspect = (window.innerWidth || 1) / (window.innerHeight || 1)
+      const mapAspect = 120 / 112
+      let halfW, halfH
+      if (aspect > mapAspect) {
+        halfH = 56
+        halfW = 56 * aspect
+      } else {
+        halfW = 60
+        halfH = 60 / aspect
+      }
+
       if (!this.orthoCamera) {
-        this.orthoCamera = new THREE.OrthographicCamera(-60, 60, 56, -56, 1, 300)
+        this.orthoCamera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 1, 300)
         this.orthoCamera.position.set(0, 140, 0)
         this.orthoCamera.lookAt(0, 0, 0)
         this.orthoCamera.rotation.z = Math.PI
+      } else {
+        this.orthoCamera.left = -halfW
+        this.orthoCamera.right = halfW
+        this.orthoCamera.top = halfH
+        this.orthoCamera.bottom = -halfH
+        this.orthoCamera.updateProjectionMatrix()
       }
+
       this.engine.setOverrideCamera(this.orthoCamera)
       this._renderTopdownMap()
       this.showToast('F4: Top-Down Orthographic Blueprint Active')
@@ -378,15 +437,24 @@ export class BindDebugTools {
     const px = e.clientX - rect.left
     const py = e.clientY - rect.top
 
-    // Map bounds: X [-60, 60], Z [-56, 56]
-    const worldX = -60 + (px / rect.width) * 120
-    const worldZ = -56 + (py / rect.height) * 112
+    const w = rect.width
+    const h = rect.height
+    const scale = Math.min(w / 120, h / 112)
+    const offsetX = (w - 120 * scale) * 0.5
+    const offsetY = (h - 112 * scale) * 0.5
 
-    let currentZone = 'Outside / Wall'
-    for (const r of this.layout.regions || []) {
-      if (worldX >= r.rect[0] && worldX <= r.rect[2] && worldZ >= r.rect[1] && worldZ <= r.rect[3]) {
-        currentZone = `${r.name} (L${r.level || 0})`
-        break
+    // Map bounds: X [-60, 60] (span 120), Z [-56, 56] (span 112)
+    const worldX = -60 + (px - offsetX) / scale
+    const worldZ = -56 + (py - offsetY) / scale
+
+    let currentZone = 'Outside Map'
+    if (worldX >= -60 && worldX <= 60 && worldZ >= -56 && worldZ <= 56) {
+      currentZone = 'Outside / Wall'
+      for (const r of this.layout.regions || []) {
+        if (worldX >= r.rect[0] && worldX <= r.rect[2] && worldZ >= r.rect[1] && worldZ <= r.rect[3]) {
+          currentZone = `${r.name} (L${r.level || 0})`
+          break
+        }
       }
     }
 
@@ -406,8 +474,17 @@ export class BindDebugTools {
     const rect = this.topdownCanvas.getBoundingClientRect()
     const px = e.clientX - rect.left
     const py = e.clientY - rect.top
-    const worldX = -60 + (px / rect.width) * 120
-    const worldZ = -56 + (py / rect.height) * 112
+
+    const w = rect.width
+    const h = rect.height
+    const scale = Math.min(w / 120, h / 112)
+    const offsetX = (w - 120 * scale) * 0.5
+    const offsetY = (h - 112 * scale) * 0.5
+
+    const worldX = -60 + (px - offsetX) / scale
+    const worldZ = -56 + (py - offsetY) / scale
+
+    if (worldX < -60 || worldX > 60 || worldZ < -56 || worldZ > 56) return
 
     // Check region height
     let targetY = 0.98
@@ -436,17 +513,32 @@ export class BindDebugTools {
 
     ctx.clearRect(0, 0, w, h)
 
-    // Map bounds: X [-60, 60] (width 120), Z [-56, 56] (height 112)
-    const toCanvasX = (wx) => ((wx - (-60)) / 120) * w
-    const toCanvasY = (wz) => ((wz - (-56)) / 112) * h
-    const toCanvasW = (rw) => (rw / 120) * w
-    const toCanvasH = (rh) => (rh / 112) * h
+    // Map bounds: X [-60, 60] (span 120m), Z [-56, 56] (span 112m)
+    // 1. Keep a uniform scale: pixels-per-meter must be identical on x and z.
+    // Fit the 120 x 112 m map into the viewport with letterboxing (min(viewW/120, viewH/112)), centered.
+    const scale = Math.min(w / 120, h / 112)
+    const renderedW = 120 * scale
+    const renderedH = 112 * scale
+    const offsetX = (w - renderedW) * 0.5
+    const offsetY = (h - renderedH) * 0.5
 
-    // 1. Dark Blueprint Background
-    ctx.fillStyle = '#0d1117'
+    const toCanvasX = (wx) => offsetX + (wx - (-60)) * scale
+    const toCanvasY = (wz) => offsetY + (wz - (-56)) * scale
+    const toCanvasW = (rw) => rw * scale
+    const toCanvasH = (rh) => rh * scale
+
+    // 1. Viewport background (letterboxing bars)
+    ctx.fillStyle = '#080c12'
     ctx.fillRect(0, 0, w, h)
 
-    // 2. 10-meter Blueprint Grid Lines & Labels
+    // 2. Blueprint map bounds background
+    ctx.fillStyle = '#0d1117'
+    ctx.fillRect(offsetX, offsetY, renderedW, renderedH)
+    ctx.strokeStyle = '#21262d'
+    ctx.lineWidth = 1
+    ctx.strokeRect(offsetX, offsetY, renderedW, renderedH)
+
+    // 3. 10-meter Blueprint Grid Lines & Labels using the uniform scale
     ctx.strokeStyle = '#1e293b'
     ctx.lineWidth = 1
     ctx.fillStyle = '#38bdf8'
@@ -455,22 +547,22 @@ export class BindDebugTools {
     for (let gx = -60; gx <= 60; gx += 10) {
       const cx = toCanvasX(gx)
       ctx.beginPath()
-      ctx.moveTo(cx, 0)
-      ctx.lineTo(cx, h)
+      ctx.moveTo(cx, offsetY)
+      ctx.lineTo(cx, offsetY + renderedH)
       ctx.stroke()
-      ctx.fillText(`x${gx}`, cx + 3, 14)
+      ctx.fillText(`x${gx}`, cx + 2, offsetY + 12)
     }
 
     for (let gz = -56; gz <= 56; gz += 10) {
       const cy = toCanvasY(gz)
       ctx.beginPath()
-      ctx.moveTo(0, cy)
-      ctx.lineTo(w, cy)
+      ctx.moveTo(offsetX, cy)
+      ctx.lineTo(offsetX + renderedW, cy)
       ctx.stroke()
-      ctx.fillText(`z${gz}`, 6, cy - 4)
+      ctx.fillText(`z${gz}`, offsetX + 4, cy - 3)
     }
 
-    // 3. Connectors
+    // 4. Connectors
     for (const c of this.layout.connectors || []) {
       const [x0, z0, x1, z1] = c.rect
       const cx0 = toCanvasX(x0)
@@ -485,7 +577,7 @@ export class BindDebugTools {
       ctx.strokeRect(cx0, cy0, cw, ch)
     }
 
-    // 4. Regions
+    // 5. Regions (clean shapes without old region name pills)
     for (const r of this.layout.regions || []) {
       const [x0, z0, x1, z1] = r.rect
       const cx0 = toCanvasX(x0)
@@ -512,24 +604,9 @@ export class BindDebugTools {
       ctx.strokeStyle = strokeColor
       ctx.lineWidth = 1.5
       ctx.strokeRect(cx0, cy0, cw, ch)
-
-      // Region Label pill
-      const label = r.level === 1 ? `${r.name.toUpperCase()} (L1)` : r.name.toUpperCase()
-      ctx.font = 'bold 11px sans-serif'
-      const textMetrics = ctx.measureText(label)
-      const textW = textMetrics.width
-      const midX = cx0 + cw * 0.5
-      const midY = cy0 + ch * 0.5
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
-      ctx.fillRect(midX - textW * 0.5 - 4, midY - 8, textW + 8, 16)
-      ctx.fillStyle = '#ffffff'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(label, midX, midY)
     }
 
-    // 5. Stairs Hatch
+    // 6. Stairs Hatch
     for (const s of this.layout.stairs || []) {
       const [x0, z0, x1, z1] = s.rect
       const cx0 = toCanvasX(x0)
@@ -569,7 +646,7 @@ export class BindDebugTools {
       }
     }
 
-    // 6. Windows
+    // 7. Windows
     for (const wnd of this.layout.windows || []) {
       const [x0, z0, x1, z1] = wnd.rect
       const cx0 = toCanvasX(x0)
@@ -582,7 +659,7 @@ export class BindDebugTools {
       ctx.strokeRect(cx0, cy0, cw, ch)
     }
 
-    // 7. Plant Zones (Yellow Outline)
+    // 8. Plant Zones (Yellow Outline)
     if (this.layout.plantZones) {
       const pzs = [this.layout.plantZones.A, this.layout.plantZones.B]
       for (const pz of pzs) {
@@ -599,7 +676,7 @@ export class BindDebugTools {
       }
     }
 
-    // 8. Props
+    // 9. Props
     for (const p of this.layout.props || []) {
       const [x0, z0, x1, z1] = p.rect
       const cx0 = toCanvasX(x0)
@@ -621,7 +698,7 @@ export class BindDebugTools {
       ctx.strokeRect(cx0, cy0, cw, ch)
     }
 
-    // 9. Teleporter Pads & Connecting Line
+    // 10. Teleporter Pads & Connecting Line
     for (const tp of this.layout.teleporters || []) {
       const [en0, en1, en2, en3] = tp.entryPad
       const [ex0, ex1, ex2, ex3] = tp.exitPad
@@ -664,7 +741,7 @@ export class BindDebugTools {
       ctx.fill()
     }
 
-    // 10. Spawn Dots
+    // 11. Spawn Dots
     const atkSpawns = this.layout.spawns?.points?.attacker || []
     for (const [sx, sz] of atkSpawns) {
       const cx = toCanvasX(sx)
@@ -691,7 +768,97 @@ export class BindDebugTools {
       ctx.stroke()
     }
 
-    // 11. Player Position & Orientation Cone
+    // 12. Callout Labels (Short names, dark background, anchored at callout pos, nudge up to 3m away from spawn dots / stairs, or skip)
+    const allSpawns = [...atkSpawns, ...defSpawns]
+    const stairsList = this.layout.stairs || []
+    const dotRadiusM = Math.max(0.6, 5 / scale)
+
+    ctx.font = 'bold 10px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    // Candidate offsets for nudging (0m first, then 0.5m to 3.0m in 8 directions)
+    const candidateOffsets = [[0, 0]]
+    for (let d = 0.5; d <= 3.01; d += 0.5) {
+      candidateOffsets.push([0, d])
+      candidateOffsets.push([0, -d])
+      candidateOffsets.push([-d, 0])
+      candidateOffsets.push([d, 0])
+      const diag = d * 0.7071
+      candidateOffsets.push([-diag, -diag])
+      candidateOffsets.push([diag, -diag])
+      candidateOffsets.push([-diag, diag])
+      candidateOffsets.push([diag, diag])
+    }
+
+    for (const [calloutKey, [origX, origZ]] of Object.entries(this.layout.callouts || {})) {
+      const labelText = CALLOUT_SHORT_NAMES[calloutKey] || calloutKey.toUpperCase()
+      const metrics = ctx.measureText(labelText)
+      const textW = metrics.width
+      const padX = 4
+      const padY = 2.5
+      const pillW = textW + padX * 2
+      const pillH = 15
+      const halfWm = (pillW * 0.5) / scale
+      const halfHm = (pillH * 0.5) / scale
+
+      let finalPos = null
+
+      for (const [dx, dz] of candidateOffsets) {
+        const candX = origX + dx
+        const candZ = origZ + dz
+
+        const bX0 = candX - halfWm
+        const bX1 = candX + halfWm
+        const bZ0 = candZ - halfHm
+        const bZ1 = candZ + halfHm
+
+        // Check spawn dots overlap
+        let collides = false
+        for (const [sx, sz] of allSpawns) {
+          if (sx >= bX0 - dotRadiusM && sx <= bX1 + dotRadiusM &&
+              sz >= bZ0 - dotRadiusM && sz <= bZ1 + dotRadiusM) {
+            collides = true
+            break
+          }
+        }
+        if (collides) continue
+
+        // Check stairs rect overlap
+        for (const st of stairsList) {
+          const [sx0, sz0, sx1, sz1] = st.rect
+          if (bX0 < sx1 && bX1 > sx0 && bZ0 < sz1 && bZ1 > sz0) {
+            collides = true
+            break
+          }
+        }
+        if (collides) continue
+
+        finalPos = [candX, candZ]
+        break
+      }
+
+      // If no valid position found within 3 m nudge, skip label
+      if (!finalPos) continue
+
+      const [anchorX, anchorZ] = finalPos
+      const cx = toCanvasX(anchorX)
+      const cy = toCanvasY(anchorZ)
+
+      const pillX = cx - pillW * 0.5
+      const pillY = cy - pillH * 0.5
+
+      ctx.fillStyle = 'rgba(15, 20, 28, 0.78)'
+      ctx.fillRect(pillX, pillY, pillW, pillH)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
+      ctx.lineWidth = 1
+      ctx.strokeRect(pillX, pillY, pillW, pillH)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(labelText, cx, cy)
+    }
+
+    // 13. Player Position & Orientation Cone
     const player = this.getPlayer?.()
     if (player && player.position) {
       const px = toCanvasX(player.position.x)
@@ -716,41 +883,43 @@ export class BindDebugTools {
       ctx.stroke()
     }
 
-    // 12. Cursor Reticle & Live Coordinate Tooltip
+    // 14. Cursor Reticle & Live Coordinate Tooltip
     if (this.cursorWorld.px !== undefined) {
       const cx = this.cursorWorld.px
       const cy = this.cursorWorld.py
 
-      // Crosshair lines
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'
-      ctx.lineWidth = 1
-      ctx.setLineDash([4, 4])
-      ctx.beginPath()
-      ctx.moveTo(cx, 0); ctx.lineTo(cx, h)
-      ctx.moveTo(0, cy); ctx.lineTo(w, cy)
-      ctx.stroke()
-      ctx.setLineDash([])
+      // Clamp crosshair lines to map bounds
+      if (cx >= offsetX && cx <= offsetX + renderedW && cy >= offsetY && cy <= offsetY + renderedH) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'
+        ctx.lineWidth = 1
+        ctx.setLineDash([4, 4])
+        ctx.beginPath()
+        ctx.moveTo(cx, offsetY); ctx.lineTo(cx, offsetY + renderedH)
+        ctx.moveTo(offsetX, cy); ctx.lineTo(offsetX + renderedW, cy)
+        ctx.stroke()
+        ctx.setLineDash([])
 
-      // Floating coordinate tooltip
-      const tooltipText = `X: ${this.cursorWorld.x.toFixed(1)}, Z: ${this.cursorWorld.z.toFixed(1)}`
-      ctx.font = 'bold 12px monospace'
-      const m = ctx.measureText(tooltipText)
-      const tx = Math.min(cx + 14, w - m.width - 16)
-      const ty = Math.max(cy - 12, 28)
+        // Floating coordinate tooltip
+        const tooltipText = `X: ${this.cursorWorld.x.toFixed(1)}, Z: ${this.cursorWorld.z.toFixed(1)}`
+        ctx.font = 'bold 12px monospace'
+        const m = ctx.measureText(tooltipText)
+        const tx = Math.min(cx + 14, offsetX + renderedW - m.width - 16)
+        const ty = Math.max(cy - 12, offsetY + 24)
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
-      ctx.strokeStyle = '#38bdf8'
-      ctx.lineWidth = 1
-      ctx.fillRect(tx - 4, ty - 14, m.width + 8, 20)
-      ctx.strokeRect(tx - 4, ty - 14, m.width + 8, 20)
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
+        ctx.strokeStyle = '#38bdf8'
+        ctx.lineWidth = 1
+        ctx.fillRect(tx - 4, ty - 14, m.width + 8, 20)
+        ctx.strokeRect(tx - 4, ty - 14, m.width + 8, 20)
 
-      ctx.fillStyle = '#38bdf8'
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(tooltipText, tx, ty - 4)
+        ctx.fillStyle = '#38bdf8'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(tooltipText, tx, ty - 4)
+      }
     }
 
-    // 13. Legend Footer Bar
+    // 15. Legend Footer Bar
     ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
     ctx.fillRect(0, h - 26, w, 26)
     ctx.fillStyle = '#e2e8f0'

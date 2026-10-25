@@ -269,7 +269,9 @@ export function buildMapMeshes(boxes) {
     }
   }
 
-  // Create merged wall meshes per zone
+  // Create merged wall meshes per zone, partitioned by level (L0 = gray, L1 = orange)
+  const isL1Wall = (b) => (b.bottomY >= 3.0)
+
   const wallConfig = [
     { zone: 'attacker', mat: wallMatAttacker },
     { zone: 'aSide',    mat: wallMatASide },
@@ -279,25 +281,43 @@ export function buildMapMeshes(boxes) {
   ]
 
   for (const { zone, mat } of wallConfig) {
-    const wallMesh = createMergedMesh(wallsByZone[zone], mat, true, true)
-    if (wallMesh) {
-      // Flag L1 walls for F5 debug
-      const hasL1 = wallsByZone[zone].some(isL1Region)
-      wallMesh.userData.level = hasL1 ? 1 : 0
-      wallMesh.userData.origMat = mat
+    const l0Walls = wallsByZone[zone].filter(w => !isL1Wall(w))
+    const l1Walls = wallsByZone[zone].filter(w => isL1Wall(w))
+
+    const l0WallMesh = createMergedMesh(l0Walls, mat, true, true)
+    if (l0WallMesh) {
+      l0WallMesh.userData.level = 0
+      l0WallMesh.userData.origMat = mat
+    }
+
+    const l1WallMesh = createMergedMesh(l1Walls, mat, true, true)
+    if (l1WallMesh) {
+      l1WallMesh.userData.level = 1
+      l1WallMesh.userData.origMat = mat
     }
 
     // Base trim mesh per zone
-    const trimMesh = createMergedMesh(baseTrimsByZone[zone], {
+    const trimMat = {
       attacker: trimMatAttacker,
       aSide: trimMatASide,
       bSide: trimMatBSide,
       market: trimMatMarket,
       defender: trimMatDefender
-    }[zone], true, true)
-    if (trimMesh) {
-      trimMesh.userData.level = 0
-      trimMesh.userData.origMat = trimMesh.material
+    }[zone]
+
+    const l0Trims = baseTrimsByZone[zone].filter(t => !isL1Wall(t))
+    const l1Trims = baseTrimsByZone[zone].filter(t => isL1Wall(t))
+
+    const l0TrimMesh = createMergedMesh(l0Trims, trimMat, true, true)
+    if (l0TrimMesh) {
+      l0TrimMesh.userData.level = 0
+      l0TrimMesh.userData.origMat = trimMat
+    }
+
+    const l1TrimMesh = createMergedMesh(l1Trims, trimMat, true, true)
+    if (l1TrimMesh) {
+      l1TrimMesh.userData.level = 1
+      l1TrimMesh.userData.origMat = trimMat
     }
   }
 
