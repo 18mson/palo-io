@@ -150,9 +150,18 @@ export class GameEngine {
       this.renderer.render(this.viewmodelScene, this.viewmodelCamera)
     }
 
+    this._frameCount = (this._frameCount || 0) + 1
+    this._fpsTimer = (this._fpsTimer || 0) + dt
+    if (this._fpsTimer >= 0.3) {
+      this.currentFps = Math.round(this._frameCount / this._fpsTimer)
+      this._frameCount = 0
+      this._fpsTimer = 0
+    }
+
     this.lastRenderStats = {
       calls: this.renderer.info.render.calls,
-      triangles: this.renderer.info.render.triangles
+      triangles: this.renderer.info.render.triangles,
+      fps: this.currentFps || (dt > 0 ? Math.round(1 / dt) : 60)
     }
   }
 
@@ -167,6 +176,11 @@ export class GameEngine {
     const activeCamera = this.overrideCamera || this.camera
     this.renderer.render(this.scene, activeCamera)
     gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    this.lastRenderStats = {
+      calls: this.renderer.info.render.calls,
+      triangles: this.renderer.info.render.triangles
+    }
 
     let sum = 0
     let count = 0

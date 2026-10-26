@@ -30,8 +30,8 @@ const INDOOR_CHECKS = [
   { id: 'hookah',    name: 'B Hookah',          pos: [30, 5.15, -1],   yaw: 0 }
 ]
 
-const outDirP5b = path.resolve('docs/captures/p5b')
-fs.mkdirSync(outDirP5b, { recursive: true })
+const outDirP6b = path.resolve('docs/captures/p6b')
+fs.mkdirSync(outDirP6b, { recursive: true })
 
 async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms))
@@ -140,8 +140,20 @@ async function main() {
   await cdp.send('Page.enable')
 
   console.log('\n===============================================================')
-  console.log('  Capturing 12 Camera Checkpoints -> docs/captures/p5b/*.png   ')
+  console.log('  Capturing 12 Camera Checkpoints -> docs/captures/p6b/*.png   ')
   console.log('===============================================================')
+
+  await cdp.send('Page.navigate', { url: 'http://localhost:5173/?checkpoint=spawnA' })
+  // Poll until game engine and player are fully ready
+  for (let t = 0; t < 30; t++) {
+    const check = await cdp.send('Runtime.evaluate', {
+      expression: 'Boolean(window.gameEngine && window.player && window.setCheckpoint)',
+      returnByValue: true
+    })
+    if (check?.result?.value) break
+    await sleep(300)
+  }
+  await sleep(1000)
 
   const results = []
 
@@ -149,8 +161,26 @@ async function main() {
     const cp = CHECKPOINTS[i]
     process.stdout.write(`[${(i + 1).toString().padStart(2, ' ')}/12] ${cp.id.padEnd(12, ' ')} (${cp.name.padEnd(20, ' ')})... `)
 
-    await cdp.send('Page.navigate', { url: `http://localhost:5173/?checkpoint=${cp.id}` })
-    await sleep(1200)
+    await cdp.send('Runtime.evaluate', {
+      expression: `
+        (() => {
+          if (window.setCheckpoint) {
+            window.setCheckpoint('${cp.id}');
+          }
+          if (window.player) {
+            window.player.alive = true;
+            window.player.health = 100;
+          }
+          const playOverlay = document.getElementById('play-overlay');
+          if (playOverlay) playOverlay.classList.add('hidden');
+          const endScreen = document.getElementById('end-screen');
+          if (endScreen) endScreen.classList.remove('active');
+          const mainMenu = document.getElementById('main-menu');
+          if (mainMenu) mainMenu.classList.remove('active');
+        })()
+      `
+    })
+    await sleep(600)
 
     // Evaluate stats and ensure position/health
     const evalRes = await cdp.send('Runtime.evaluate', {
@@ -174,25 +204,26 @@ async function main() {
           const stats = engine?.lastRenderStats || {};
           const drawCalls = stats.calls || 0;
           const triangles = stats.triangles || 0;
+          const fps = stats.fps || 60;
           const avgLum = engine ? engine.measureScreenLuminance() : 0;
 
-          return { drawCalls, triangles, avgLum };
+          return { drawCalls, triangles, fps, avgLum };
         })()
       `,
       returnByValue: true
     })
 
-    const stats = evalRes?.result?.value || { drawCalls: 0, triangles: 0, avgLum: 0 }
+    const stats = evalRes?.result?.value || { drawCalls: 0, triangles: 0, fps: 60, avgLum: 0 }
     results.push({ ...cp, ...stats })
 
     // Capture screenshot
     const res = await cdp.send('Page.captureScreenshot', { format: 'png' })
     const buffer = Buffer.from(res.data, 'base64')
 
-    // Save to docs/captures/p5b/
-    fs.writeFileSync(path.join(outDirP5b, `${cp.id}.png`), buffer)
+    // Save to docs/captures/p6b/
+    fs.writeFileSync(path.join(outDirP6b, `${cp.id}.png`), buffer)
 
-    console.log(`Calls: ${stats.drawCalls.toString().padStart(2, ' ')} | Triangles: ${stats.triangles.toString().padStart(6, ' ')} | Lum: ${stats.avgLum.toFixed(3)} | Saved!`)
+    console.log(`Calls: ${stats.drawCalls.toString().padStart(2, ' ')} | Triangles: ${stats.triangles.toString().padStart(6, ' ')} | FPS: ${stats.fps.toString().padStart(2, ' ')} | Lum: ${stats.avgLum.toFixed(3)} | Saved!`)
   }
 
   // Measure indoor luminance specifically for aTele, aShowers, bShort, hookah
@@ -237,7 +268,7 @@ async function main() {
     // Also capture screenshot for indoor check
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' })
     const buf = Buffer.from(shot.data, 'base64')
-    fs.writeFileSync(path.join(outDirP5b, `${ic.id}.png`), buf)
+    fs.writeFileSync(path.join(outDirP6b, `${ic.id}.png`), buf)
 
     console.log(`  [${status}] ${ic.id.padEnd(10, ' ')}: Luminance = ${avgLum.toFixed(3)} (>= 0.25 target)`)
   }
@@ -249,7 +280,7 @@ async function main() {
   } else {
     console.log('✗ Some indoor checkpoints fell below 0.25 luminance target.')
   }
-  console.log('All 12 checkpoints captured to docs/captures/p5b/*.png successfully!')
+  console.log('All 12 checkpoints captured to docs/captures/p6b/*.png successfully!')
 }
 
 main().catch(err => {
