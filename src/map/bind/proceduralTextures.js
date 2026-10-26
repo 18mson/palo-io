@@ -51,31 +51,38 @@ function buildTexture(canvas, repeatX = 1, repeatY = 1) {
 
 /**
  * 1. Stone Floor Tiles Texture (32x32 px)
- * Paver grid with mortar lines and subtle per-paver stone hue variations.
+ * Tile size 1 m (16x16 px in 2m repeat), grout only ~20% darker than tile, +-4% brightness noise.
  */
-export function createStoneFloorTexture(baseHex, groutHex = '#55524c', size = 32) {
+export function createStoneFloorTexture(baseHex, groutHex = null, size = 32) {
   const canvas = makeCanvas(size)
   if (!canvas) return null
   const ctx = canvas.getContext('2d')
   const [br, bg, bb] = parseHex(baseHex)
-  const [gr, gg, gb] = parseHex(groutHex)
 
-  const tileSize = 8 // 4x4 tiles in 32px
+  const tileSize = 16 // 1 m tile in a 2 m (32 px) repeat = 2x2 tiles
   for (let ty = 0; ty < size; ty += tileSize) {
     for (let tx = 0; tx < size; tx += tileSize) {
-      // Deterministic per-tile shade
-      const tileHash = (pnoise(tx, ty, 101) - 0.5) * 18
-      const tr = br + tileHash
-      const tg = bg + tileHash
-      const tb = bb + tileHash
+      // Subtle per-tile brightness noise of +-4%
+      const noiseFactor = 1.0 + (pnoise(tx, ty, 101) * 2 - 1) * 0.04
+      const tr = clampByte(br * noiseFactor)
+      const tg = clampByte(bg * noiseFactor)
+      const tb = clampByte(bb * noiseFactor)
 
-      for (let y = ty; y < ty + tileSize; y++) {
-        for (let x = tx; x < tx + tileSize; x++) {
-          const isGrout = (x === tx || y === ty || x === tx + tileSize - 1 || y === ty + tileSize - 1)
+      // Grout color only ~20% darker than the tile (not black)
+      const [gr, gg, gb] = groutHex
+        ? parseHex(groutHex)
+        : [clampByte(tr * 0.80), clampByte(tg * 0.80), clampByte(tb * 0.80)]
+
+      for (let dy = 0; dy < tileSize; dy++) {
+        for (let dx = 0; dx < tileSize; dx++) {
+          const x = tx + dx
+          const y = ty + dy
+          // 1 px grout line at top and left of tile
+          const isGrout = (dx === 0 || dy === 0)
           if (isGrout) {
             ctx.fillStyle = hexFromRgb(gr, gg, gb)
           } else {
-            const grain = (pnoise(x, y, 7) - 0.5) * 8
+            const grain = (pnoise(x, y, 7) - 0.5) * 6
             ctx.fillStyle = hexFromRgb(tr + grain, tg + grain, tb + grain)
           }
           ctx.fillRect(x, y, 1, 1)
@@ -87,35 +94,43 @@ export function createStoneFloorTexture(baseHex, groutHex = '#55524c', size = 32
 }
 
 /**
- * 2. Sandstone Wall Texture (32x32 px)
- * Ashlar masonry block courses with fine mortar seams and sandy grain.
+ * Common running-bond brick texture generator (32x32 px).
+ * 1 course = 0.25 m high (4 px in 32 px), 0.5 m long (8 px in 32 px), 2 m x 2 m repeat.
+ * Mortar lines 1 px in 32 px texture, mortar color only ~15% darker than the brick.
  */
-export function createSandstoneTexture(baseHex = '#c9b08a', mortarHex = '#a38d6b', size = 32) {
+function createBrickTexture(baseHex, mortarHex = null, size = 32, seed = 55) {
   const canvas = makeCanvas(size)
   if (!canvas) return null
   const ctx = canvas.getContext('2d')
   const [br, bg, bb] = parseHex(baseHex)
-  const [mr, mg, mb] = parseHex(mortarHex)
 
-  const courseHeight = 8 // 4 courses
-  for (let row = 0; row < 4; row++) {
+  // Default mortar: only ~15% darker than brick
+  const [mr, mg, mb] = mortarHex
+    ? parseHex(mortarHex)
+    : [clampByte(br * 0.85), clampByte(bg * 0.85), clampByte(bb * 0.85)]
+
+  const courseHeight = 4 // 8 courses in 32 px (0.25 m high in 2 m repeat)
+  const brickLength = 8  // 4 bricks in 32 px (0.5 m long in 2 m repeat)
+
+  for (let row = 0; row < 8; row++) {
     const y0 = row * courseHeight
-    const offset = (row % 2 === 1) ? 8 : 0 // running bond
+    const offset = (row % 2 === 1) ? 4 : 0 // running bond shift by half-brick
 
-    for (let col = 0; col < 3; col++) {
-      const x0 = (col * 16 + offset) % size
-      const blockHash = (pnoise(row, col, 88) - 0.5) * 14
+    for (let col = 0; col < 5; col++) {
+      const x0 = (col * brickLength + offset) % size
+      const blockHash = (pnoise(row, col, seed) - 0.5) * 8
 
       for (let dy = 0; dy < courseHeight; dy++) {
-        for (let dx = 0; dx < 16; dx++) {
+        for (let dx = 0; dx < brickLength; dx++) {
           const px = (x0 + dx) % size
           const py = y0 + dy
-          const isMortar = (dy === 0 || dy === courseHeight - 1 || dx === 0 || dx === 15)
+          // 1 px mortar line at top and left of brick
+          const isMortar = (dy === 0 || dx === 0)
 
           if (isMortar) {
             ctx.fillStyle = hexFromRgb(mr, mg, mb)
           } else {
-            const grain = (pnoise(px, py, 13) - 0.5) * 10
+            const grain = (pnoise(px, py, 13) - 0.5) * 5
             ctx.fillStyle = hexFromRgb(br + blockHash + grain, bg + blockHash + grain, bb + blockHash + grain)
           }
           ctx.fillRect(px, py, 1, 1)
@@ -127,10 +142,18 @@ export function createSandstoneTexture(baseHex = '#c9b08a', mortarHex = '#a38d6b
 }
 
 /**
+ * 2. Sandstone Wall Texture (32x32 px)
+ * Brick courses: 0.25 m high x 0.5 m long, 1 px mortar 15% darker than brick.
+ */
+export function createSandstoneTexture(baseHex = '#c9b08a', mortarHex = null, size = 32) {
+  return createBrickTexture(baseHex, mortarHex, size, 88)
+}
+
+/**
  * 3. Plaster Wall Texture (32x32 px)
  * Soft Mediterranean stucco/plaster with gentle fine stippling.
  */
-export function createPlasterTexture(baseHex = '#d8cfc0', grainHex = '#bfb5a3', size = 32) {
+export function createPlasterTexture(baseHex = '#d8cfc0', grainHex = null, size = 32) {
   const canvas = makeCanvas(size)
   if (!canvas) return null
   const ctx = canvas.getContext('2d')
@@ -138,7 +161,7 @@ export function createPlasterTexture(baseHex = '#d8cfc0', grainHex = '#bfb5a3', 
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const grain = (pnoise(x, y, 99) - 0.5) * 16
+      const grain = (pnoise(x, y, 99) - 0.5) * 12
       const patch = (Math.sin(x * 0.2) + Math.cos(y * 0.2)) * 3
       ctx.fillStyle = hexFromRgb(br + grain + patch, bg + grain + patch, bb + grain + patch)
       ctx.fillRect(x, y, 1, 1)
@@ -149,77 +172,43 @@ export function createPlasterTexture(baseHex = '#d8cfc0', grainHex = '#bfb5a3', 
 
 /**
  * 4. Terracotta Brick Wall Texture (32x32 px)
- * Warm clay brick courses with dark mortar.
+ * Brick courses: 0.25 m high x 0.5 m long, 1 px mortar 15% darker than brick.
  */
-export function createTerracottaTexture(baseHex = '#b8654a', mortarHex = '#82412e', size = 32) {
-  const canvas = makeCanvas(size)
-  if (!canvas) return null
-  const ctx = canvas.getContext('2d')
-  const [br, bg, bb] = parseHex(baseHex)
-  const [mr, mg, mb] = parseHex(mortarHex)
-
-  const brickH = 8
-  for (let r = 0; r < 4; r++) {
-    const y0 = r * brickH
-    const xOff = (r % 2 === 1) ? 8 : 0
-
-    for (let c = 0; c < 3; c++) {
-      const x0 = (c * 16 + xOff) % size
-      const bHash = (pnoise(r, c, 55) - 0.5) * 16
-
-      for (let dy = 0; dy < brickH; dy++) {
-        for (let dx = 0; dx < 16; dx++) {
-          const px = (x0 + dx) % size
-          const py = y0 + dy
-          const isMortar = (dy === 0 || dy === brickH - 1 || dx === 0 || dx === 15)
-
-          if (isMortar) {
-            ctx.fillStyle = hexFromRgb(mr, mg, mb)
-          } else {
-            const grain = (pnoise(px, py, 21) - 0.5) * 8
-            ctx.fillStyle = hexFromRgb(br + bHash + grain, bg + bHash + grain, bb + bHash + grain)
-          }
-          ctx.fillRect(px, py, 1, 1)
-        }
-      }
-    }
-  }
-  return buildTexture(canvas, 1, 1)
+export function createTerracottaTexture(baseHex = '#b8654a', mortarHex = null, size = 32) {
+  return createBrickTexture(baseHex, mortarHex, size, 55)
 }
 
 /**
  * 5. Wood Plank Texture (32x32 px)
- * Horizontal wood planks with grain lines and dark seams for Level 1 floors & trim.
+ * Horizontal wood planks with grain lines and soft seams (e.g. for roof underside, L1 floors & trim).
  */
-export function createWoodPlankTexture(baseHex = '#a07850', seamHex = '#543b23', size = 32) {
+export function createWoodPlankTexture(baseHex = '#a07850', seamHex = null, size = 32) {
   const canvas = makeCanvas(size)
   if (!canvas) return null
   const ctx = canvas.getContext('2d')
   const [br, bg, bb] = parseHex(baseHex)
-  const [sr, sg, sb] = parseHex(seamHex)
+  const [sr, sg, sb] = seamHex
+    ? parseHex(seamHex)
+    : [clampByte(br * 0.75), clampByte(bg * 0.75), clampByte(bb * 0.75)]
 
   const plankH = 8 // 4 planks in 32px
   for (let p = 0; p < 4; p++) {
     const y0 = p * plankH
-    const plankTint = (pnoise(p, 0, 77) - 0.5) * 18
+    const plankTint = (pnoise(p, 0, 77) - 0.5) * 12
 
     for (let dy = 0; dy < plankH; dy++) {
-      const isSeam = (dy === 0 || dy === plankH - 1)
+      const isSeam = (dy === 0)
       for (let x = 0; x < size; x++) {
         if (isSeam) {
           ctx.fillStyle = hexFromRgb(sr, sg, sb)
         } else {
           // Horizontal grain streaks
-          const grain = (Math.sin(x * 0.8 + p * 3.14) > 0.4 ? 6 : -4) + (pnoise(x, dy, 33) - 0.5) * 6
+          const grain = (Math.sin(x * 0.8 + p * 3.14) > 0.4 ? 4 : -3) + (pnoise(x, dy, 33) - 0.5) * 4
           ctx.fillStyle = hexFromRgb(br + plankTint + grain, bg + plankTint + grain, bb + plankTint + grain)
         }
         ctx.fillRect(x, y0 + dy, 1, 1)
       }
     }
-    // Pegs at plank ends
-    ctx.fillStyle = hexFromRgb(sr - 15, sg - 15, sb - 15)
-    ctx.fillRect(3, y0 + 3, 2, 2)
-    ctx.fillRect(size - 5, y0 + 3, 2, 2)
   }
   return buildTexture(canvas, 1, 1)
 }

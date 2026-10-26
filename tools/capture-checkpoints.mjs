@@ -1,9 +1,11 @@
 // tools/capture-checkpoints.mjs
-// Automates capturing all 12 camera checkpoints from docs/map/BIND_BLUEPRINT.md §9.
+// Automates capturing all 12 camera checkpoints from docs/map/BIND_BLUEPRINT.md §9
+// and measures draw calls, triangles, and screen luminance (target indoors >= 0.25).
 // Uses Chrome DevTools Protocol (CDP) via WebSocket.
 
 import fs from 'fs'
 import path from 'path'
+import { spawn } from 'child_process'
 
 const CHECKPOINTS = [
   { id: 'spawnA',     name: 'Attacker Spawn', pos: [0, 1.65, 50],     yaw: 0,   desc: 'two exit corridors, cave door' },
@@ -20,11 +22,68 @@ const CHECKPOINTS = [
   { id: 'spawnD',     name: 'Defender Spawn', pos: [0, 1.65, -50],   yaw: 180, desc: 'exits east/west, link south' }
 ]
 
-const outDir = path.resolve('docs/map/captures')
-fs.mkdirSync(outDir, { recursive: true })
+// Extra indoor checkpoints to verify luminance >= 0.25
+const INDOOR_CHECKS = [
+  { id: 'aTele',     name: 'A Teleporter Room', pos: [-34, 1.65, 22],  yaw: 0 },
+  { id: 'aShowers',  name: 'A Showers',         pos: [-50, 1.65, 13],  yaw: 0 },
+  { id: 'bShort',    name: 'B Short Room',      pos: [32, 1.65, 16],   yaw: 0 },
+  { id: 'hookah',    name: 'B Hookah',          pos: [30, 5.15, -1],   yaw: 0 }
+]
+
+const outDirP5b = path.resolve('docs/captures/p5b')
+fs.mkdirSync(outDirP5b, { recursive: true })
+
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
+
+async function isPortOpen(port = 9222) {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/json/version`)
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+async function ensureChrome() {
+  if (await isPortOpen(9222)) {
+    return null
+  }
+
+  const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  if (!fs.existsSync(chromePath)) {
+    throw new Error(`Google Chrome not found at ${chromePath}`)
+  }
+
+  console.log('Launching headless Chrome with remote debugging on port 9222...')
+  const proc = spawn(chromePath, [
+    '--headless=new',
+    '--remote-debugging-port=9222',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--user-data-dir=/tmp/palo-io-chrome-profile',
+    '--window-size=1280,720',
+    'http://localhost:5173/'
+  ], {
+    stdio: 'ignore',
+    detached: true
+  })
+  proc.unref()
+
+  // Wait for Chrome CDP to be available
+  for (let i = 0; i < 30; i++) {
+    await sleep(300)
+    if (await isPortOpen(9222)) {
+      console.log('Headless Chrome started and listening on port 9222!')
+      return proc
+    }
+  }
+  throw new Error('Timed out waiting for Chrome to start on port 9222')
+}
 
 async function getPageWsUrl() {
-  const res = await fetch('http://localhost:9222/json')
+  const res = await fetch('http://127.0.0.1:9222/json')
   const pages = await res.json()
   const page = pages.find(p => p.url.includes('localhost:5173') && p.type === 'page') || pages.find(p => p.type === 'page')
   if (!page || !page.webSocketDebuggerUrl) {
@@ -71,30 +130,30 @@ class CDPClient {
   }
 }
 
-async function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms))
-}
-
 async function main() {
-  console.log('Connecting to Chrome CDP on port 9222...')
+  const spawnedChrome = await ensureChrome()
   const wsUrl = await getPageWsUrl()
   const cdp = new CDPClient(wsUrl)
   await cdp.connect()
-  console.log('Connected! Capturing all 12 checkpoints...')
+  console.log('Connected to Chrome DevTools Protocol!')
 
-  // Enable Page domain
   await cdp.send('Page.enable')
+
+  console.log('\n===============================================================')
+  console.log('  Capturing 12 Camera Checkpoints -> docs/captures/p5b/*.png   ')
+  console.log('===============================================================')
+
+  const results = []
 
   for (let i = 0; i < CHECKPOINTS.length; i++) {
     const cp = CHECKPOINTS[i]
-    console.log(`[${i + 1}/12] Capturing ${cp.id} (${cp.name})...`)
+    process.stdout.write(`[${(i + 1).toString().padStart(2, ' ')}/12] ${cp.id.padEnd(12, ' ')} (${cp.name.padEnd(20, ' ')})... `)
 
-    // Navigate to page with checkpoint URL param
     await cdp.send('Page.navigate', { url: `http://localhost:5173/?checkpoint=${cp.id}` })
-    await sleep(1500)
+    await sleep(1200)
 
-    // Ensure player is alive, overlays hidden, position & yaw exact
-    await cdp.send('Runtime.evaluate', {
+    // Evaluate stats and ensure position/health
+    const evalRes = await cdp.send('Runtime.evaluate', {
       expression: `
         (() => {
           if (window.setCheckpoint) {
@@ -110,24 +169,87 @@ async function main() {
           if (endScreen) endScreen.classList.remove('active');
           const mainMenu = document.getElementById('main-menu');
           if (mainMenu) mainMenu.classList.remove('active');
+
+          const engine = window.gameEngine || window.debugTools?.engine;
+          const stats = engine?.lastRenderStats || {};
+          const drawCalls = stats.calls || 0;
+          const triangles = stats.triangles || 0;
+          const avgLum = engine ? engine.measureScreenLuminance() : 0;
+
+          return { drawCalls, triangles, avgLum };
         })()
-      `
+      `,
+      returnByValue: true
     })
-    await sleep(600)
+
+    const stats = evalRes?.result?.value || { drawCalls: 0, triangles: 0, avgLum: 0 }
+    results.push({ ...cp, ...stats })
 
     // Capture screenshot
     const res = await cdp.send('Page.captureScreenshot', { format: 'png' })
     const buffer = Buffer.from(res.data, 'base64')
 
-    const file1 = path.join(outDir, `checkpoint_${cp.id}.png`)
-    const file2 = path.join(outDir, `${cp.id}.png`)
-    fs.writeFileSync(file1, buffer)
-    fs.writeFileSync(file2, buffer)
-    console.log(`  ✓ Saved: docs/map/captures/checkpoint_${cp.id}.png (${buffer.length} bytes)`)
+    // Save to docs/captures/p5b/
+    fs.writeFileSync(path.join(outDirP5b, `${cp.id}.png`), buffer)
+
+    console.log(`Calls: ${stats.drawCalls.toString().padStart(2, ' ')} | Triangles: ${stats.triangles.toString().padStart(6, ' ')} | Lum: ${stats.avgLum.toFixed(3)} | Saved!`)
+  }
+
+  // Measure indoor luminance specifically for aTele, aShowers, bShort, hookah
+  console.log('\n===============================================================')
+  console.log('  Indoor Luminance Verification (Target: Luminance >= 0.25)    ')
+  console.log('===============================================================')
+
+  let allIndoorsPassed = true
+  for (const ic of INDOOR_CHECKS) {
+    await cdp.send('Runtime.evaluate', {
+      expression: `
+        (() => {
+          if (window.setCheckpoint) {
+            window.setCheckpoint('${ic.id}');
+          }
+          if (window.player) {
+            window.player.alive = true;
+            window.player.health = 100;
+          }
+          const playOverlay = document.getElementById('play-overlay');
+          if (playOverlay) playOverlay.classList.add('hidden');
+        })()
+      `
+    })
+    await sleep(800)
+
+    const lumRes = await cdp.send('Runtime.evaluate', {
+      expression: `
+        (() => {
+          const engine = window.gameEngine || window.debugTools?.engine;
+          return engine ? engine.measureScreenLuminance() : 0;
+        })()
+      `,
+      returnByValue: true
+    })
+
+    const avgLum = lumRes?.result?.value || 0
+    const pass = avgLum >= 0.25
+    if (!pass) allIndoorsPassed = false
+    const status = pass ? '✓ PASS' : '✗ FAIL'
+
+    // Also capture screenshot for indoor check
+    const shot = await cdp.send('Page.captureScreenshot', { format: 'png' })
+    const buf = Buffer.from(shot.data, 'base64')
+    fs.writeFileSync(path.join(outDirP5b, `${ic.id}.png`), buf)
+
+    console.log(`  [${status}] ${ic.id.padEnd(10, ' ')}: Luminance = ${avgLum.toFixed(3)} (>= 0.25 target)`)
   }
 
   cdp.close()
-  console.log('All 12 camera checkpoints captured successfully!')
+  console.log('===============================================================')
+  if (allIndoorsPassed) {
+    console.log('✓ All indoor checkpoints achieved average luminance >= 0.25!')
+  } else {
+    console.log('✗ Some indoor checkpoints fell below 0.25 luminance target.')
+  }
+  console.log('All 12 checkpoints captured to docs/captures/p5b/*.png successfully!')
 }
 
 main().catch(err => {

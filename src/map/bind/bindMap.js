@@ -13,15 +13,19 @@ export function createBindMap(scene) {
   const rootGroup = new THREE.Group()
   rootGroup.name = 'bind-map-root'
 
-  // 1. Environment & Lighting (docs/map/BIND_BLUEPRINT.md §8)
-  const skyColor = new THREE.Color(0x8fa4b8)
+  // 1. Environment & Lighting (Phase P5b: docs/map/BIND_BLUEPRINT.md §8)
+  const skyColor = new THREE.Color(0x9ec7ee)
   scene.background = skyColor
-  scene.fog = new THREE.Fog(0x8fa4b8, 60, 180)
+  scene.fog = new THREE.Fog(0x9ec7ee, 80, 200)
 
-  // Hemisphere 0.6: Sky 0xe8f0f8, Ground 0x4a443b
-  const hemiLight = new THREE.HemisphereLight(0xe8f0f8, 0x4a443b, 0.6)
+  // Hemisphere 0.6: Sky 0xe8f0f8, Ground 0x6a6a70
+  const hemiLight = new THREE.HemisphereLight(0xe8f0f8, 0x6a6a70, 0.6)
   hemiLight.position.set(0, 50, 0)
   rootGroup.add(hemiLight)
+
+  // AmbientLight 0.25: Soft global illumination fill
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.25)
+  rootGroup.add(ambientLight)
 
   // Sun: DirectionalLight 1.1 from (-0.4, -1, -0.3) -> source offset (+32, 80, +24)
   const sun = new THREE.DirectionalLight(0xfffaf0, 1.1)

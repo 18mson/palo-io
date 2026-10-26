@@ -67,22 +67,22 @@ Player controller requirements: capsule radius 0.4 m, height 1.8 m (eye 1.65), *
 ## 3. Regions
 | id | name | rect [x0,z0,x1,z1) | size m | level | kind | roof |
 |---|---|---|---|---|---|---|
-| attackerSpawn | Attacker Spawn | [-12, 42, 12, 54] | 24x12 | 0 | spawn | yes |
-| attackerCave | Attacker Cave | [-6, 32, 6, 40] | 12x8 | 0 | room | yes |
-| defenderSpawn | Defender Spawn | [-12, -54, 12, -42] | 24x12 | 0 | spawn | yes |
+| attackerSpawn | Attacker Spawn | [-12, 42, 12, 54] | 24x12 | 0 | spawn | eave only |
+| attackerCave | Attacker Cave | [-6, 32, 6, 40] | 12x8 | 0 | room | full |
+| defenderSpawn | Defender Spawn | [-12, -54, 12, -42] | 24x12 | 0 | spawn | eave only |
 | aSpawnExit | A Spawn Exit | [-26, 46, -14, 50] | 12x4 | 0 | corridor |  |
 | aLobby | A Lobby | [-44, 38, -28, 54] | 16x16 | 0 | plaza |  |
 | bSpawnExit | B Spawn Exit | [14, 46, 26, 50] | 12x4 | 0 | corridor |  |
 | bLobby | B Lobby | [28, 38, 44, 54] | 16x16 | 0 | plaza |  |
 | aShort1 | A Short (lower) | [-36, 26, -30, 36] | 6x10 | 0 | corridor |  |
-| aTeleRoom | A Teleporter Room | [-38, 14, -24, 24] | 14x10 | 0 | room | yes |
+| aTeleRoom | A Teleporter Room | [-38, 14, -24, 24] | 14x10 | 0 | room | full |
 | aShort2 | A Short (upper) | [-30, -2, -24, 12] | 6x14 | 0 | corridor |  |
 | aBath1 | A Bath Approach | [-54, 40, -48, 46] | 6x6 | 0 | corridor |  |
 | aBath2 | A Bath Corridor | [-54, 22, -48, 38] | 6x16 | 0 | corridor |  |
-| aShowers | A Showers (Bath) | [-58, 6, -42, 20] | 16x14 | 0 | room | yes |
+| aShowers | A Showers (Bath) | [-58, 6, -42, 20] | 16x14 | 0 | room | full |
 | aBath3 | A Bath Exit | [-48, -2, -42, 4] | 6x6 | 0 | corridor |  |
 | aSite | A Site | [-52, -22, -26, -4] | 26x18 | 0 | site |  |
-| aCubby | A Cubby | [-58, -12, -54, -6] | 4x6 | 0 | room | yes |
+| aCubby | A Cubby | [-58, -12, -54, -6] | 4x6 | 0 | room | full |
 | aHeaven | A Heaven (Tower) | [-52, -22, -44, -14] | 8x8 | 1 | platform |  |
 | aCT | A CT | [-42, -36, -34, -24] | 8x12 | 0 | corridor |  |
 | aExit | A Exit | [-44, -50, -30, -38] | 14x12 | 0 | room |  |
@@ -90,15 +90,15 @@ Player controller requirements: capsule radius 0.4 m, height 1.8 m (eye 1.65), *
 | aLamps1 | A Lamps (U-Hall) north | [-24, -26, -14, -22] | 10x4 | 0 | corridor |  |
 | aLamps2 | A Lamps (U-Hall) south | [-24, -22, -18, -10] | 6x12 | 0 | corridor |  |
 | dsLink | Defender Link | [-2, -40, 2, -32] | 4x8 | 0 | corridor |  |
-| market | Market | [-12, -30, 12, -18] | 24x12 | 0 | plaza | yes |
+| market | Market | [-12, -30, 12, -18] | 24x12 | 0 | plaza | eave only |
 | bLink | B Link | [14, -26, 24, -22] | 10x4 | 0 | corridor |  |
 | bElbow | B Elbow | [18, -22, 24, -10] | 6x12 | 0 | corridor |  |
 | bLong1 | B Long (lower) | [46, 26, 54, 48] | 8x22 | 0 | corridor |  |
 | bLong2 | B Long (upper) | [40, 8, 48, 24] | 8x16 | 0 | corridor |  |
 | bGarden | B Garden | [39, -4, 54, 6] | 15x10 | 0 | plaza |  |
 | bShort1 | B Short (lower) | [30, 24, 36, 36] | 6x12 | 0 | corridor |  |
-| bShortRoom | B Short Room (A-teleporter exit) | [26, 10, 38, 22] | 12x12 | 0 | room | yes |
-| bHookah | B Hookah (Window) | [24, -4, 34, 4] | 10x8 | 1 | platform | yes |
+| bShortRoom | B Short Room (A-teleporter exit) | [26, 10, 38, 22] | 12x12 | 0 | room | full |
+| bHookah | B Hookah (Window) | [24, -4, 34, 4] | 10x8 | 1 | platform | full |
 | bSite | B Site | [26, -22, 50, -6] | 24x16 | 0 | site |  |
 | bHall | B Hall | [36, -36, 42, -24] | 6x12 | 0 | corridor |  |
 | bExit | B Exit | [30, -50, 44, -38] | 14x12 | 0 | room |  |

@@ -149,6 +149,35 @@ export class GameEngine {
       this.renderer.clearDepth()
       this.renderer.render(this.viewmodelScene, this.viewmodelCamera)
     }
+
+    this.lastRenderStats = {
+      calls: this.renderer.info.render.calls,
+      triangles: this.renderer.info.render.triangles
+    }
+  }
+
+  measureScreenLuminance() {
+    const gl = this.renderer.getContext()
+    const w = this.renderer.domElement.width
+    const h = this.renderer.domElement.height
+    const pixels = new Uint8Array(w * h * 4)
+
+    this.renderer.autoClear = false
+    this.renderer.clear()
+    const activeCamera = this.overrideCamera || this.camera
+    this.renderer.render(this.scene, activeCamera)
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+
+    let sum = 0
+    let count = 0
+    for (let i = 0; i < pixels.length; i += 64) {
+      const r = pixels[i] / 255
+      const g = pixels[i + 1] / 255
+      const b = pixels[i + 2] / 255
+      sum += 0.2126 * r + 0.7152 * g + 0.0722 * b
+      count++
+    }
+    return count > 0 ? (sum / count) : 0
   }
 
   get isLocked() {

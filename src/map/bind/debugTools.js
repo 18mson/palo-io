@@ -1013,8 +1013,13 @@ export class BindDebugTools {
   }
 
   teleportToCheckpoint(cpIdOrObj) {
+    const indoorAliases = {
+      aShowers: { id: 'aShowers', name: 'A Showers (Bath)', pos: [-50, 1.65, 13], yaw: 0, eyeHeight: 1.65, desc: 'showers interior' },
+      bShort: { id: 'bShort', name: 'B Short Room', pos: [32, 1.65, 16], yaw: 0, eyeHeight: 1.65, desc: 'teleporter exit room' },
+      bShortRoom: { id: 'bShortRoom', name: 'B Short Room', pos: [32, 1.65, 16], yaw: 0, eyeHeight: 1.65, desc: 'teleporter exit room' }
+    }
     const cp = typeof cpIdOrObj === 'string'
-      ? CAMERA_CHECKPOINTS.find(c => c.id === cpIdOrObj)
+      ? (CAMERA_CHECKPOINTS.find(c => c.id === cpIdOrObj) || indoorAliases[cpIdOrObj])
       : cpIdOrObj
     if (!cp) return false
     const player = this.getPlayer?.()

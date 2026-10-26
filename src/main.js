@@ -39,6 +39,7 @@ function init() {
     getPlayer: () => player
   })
   window.debugTools = debugTools
+  window.gameEngine = engine
 
   setupMenuButtons()
   setupGameEvents()

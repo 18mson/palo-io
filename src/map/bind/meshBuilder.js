@@ -89,7 +89,100 @@ function boxToGeometry(b, uvScale = 0.5) {
   }
   uvAttr.needsUpdate = true
 
+  geo.computeVertexNormals()
   geo.translate(cx, cy, cz)
+  return geo
+}
+
+/**
+ * Creates top and side faces of a roof box (+X, -X, +Y, +Z, -Z), omitting the bottom face.
+ */
+function roofBoxToTopSidesGeometry(b, uvScale = 0.5) {
+  const width = Math.max(0.01, b.maxX - b.minX)
+  const height = Math.max(0.01, b.topY - b.bottomY)
+  const depth = Math.max(0.01, b.maxZ - b.minZ)
+  const cx = (b.minX + b.maxX) * 0.5
+  const cy = (b.bottomY + b.topY) * 0.5
+  const cz = (b.minZ + b.maxZ) * 0.5
+
+  const geo = new THREE.BoxGeometry(width, height, depth)
+
+  const uvAttr = geo.attributes.uv
+  const uvs = uvAttr.array
+  const spans = [
+    [depth, height], // +X
+    [depth, height], // -X
+    [width, depth],  // +Y (top)
+    [width, depth],  // -Y (bottom)
+    [width, height], // +Z
+    [width, height], // -Z
+  ]
+  for (let f = 0; f < 6; f++) {
+    const [uSpan, vSpan] = spans[f]
+    for (let v = 0; v < 4; v++) {
+      const idx = (f * 4 + v) * 2
+      uvs[idx] *= uSpan * uvScale
+      uvs[idx + 1] *= vSpan * uvScale
+    }
+  }
+  uvAttr.needsUpdate = true
+
+  // Omit bottom face (-Y face, indices 18 to 23)
+  const origIndices = geo.index.array
+  const newIndices = new Uint16Array(30)
+  newIndices.set(origIndices.subarray(0, 18), 0)
+  newIndices.set(origIndices.subarray(24, 36), 18)
+  geo.setIndex(new THREE.BufferAttribute(newIndices, 1))
+
+  geo.computeVertexNormals()
+  geo.translate(cx, cy, cz)
+  return geo
+}
+
+/**
+ * Creates the underside horizontal face (-Y) of a roof box, normal pointing straight down.
+ */
+function roofBoxToUndersideGeometry(b, uvScale = 0.5) {
+  const width = Math.max(0.01, b.maxX - b.minX)
+  const depth = Math.max(0.01, b.maxZ - b.minZ)
+  const cx = (b.minX + b.maxX) * 0.5
+  const cz = (b.minZ + b.maxZ) * 0.5
+
+  const geo = new THREE.PlaneGeometry(width, depth)
+  // Rotate so normal points downward (0, -1, 0)
+  geo.rotateX(Math.PI * 0.5)
+
+  const uvAttr = geo.attributes.uv
+  const uvs = uvAttr.array
+  for (let v = 0; v < 4; v++) {
+    const idx = v * 2
+    uvs[idx] *= width * uvScale
+    uvs[idx + 1] *= depth * uvScale
+  }
+  uvAttr.needsUpdate = true
+
+  geo.computeVertexNormals()
+  geo.translate(cx, b.bottomY, cz)
+  return geo
+}
+
+/**
+ * Creates a glowing 3D hollow floor ring (outer radius, inner radius, height).
+ */
+function createRingGeometry(outerRadius, innerRadius, height) {
+  const shape = new THREE.Shape()
+  shape.absarc(0, 0, outerRadius, 0, Math.PI * 2, false)
+  const hole = new THREE.Path()
+  hole.absarc(0, 0, innerRadius, 0, Math.PI * 2, true)
+  shape.holes.push(hole)
+
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: height,
+    bevelEnabled: false,
+    curveSegments: 32
+  })
+  geo.rotateX(-Math.PI * 0.5)
+  geo.computeVertexNormals()
   return geo
 }
 
@@ -103,11 +196,12 @@ export function buildMapMeshes(boxes) {
 
   const regions = bindLayout.regions || []
 
-  function createMergedMesh(boxList, material, castShadow = true, receiveShadow = true) {
-    if (!boxList || boxList.length === 0) return null
-    const geos = boxList.map(b => boxToGeometry(b, 0.5))
-    const mergedGeo = BufferGeometryUtils.mergeGeometries(geos, false)
-    geos.forEach(g => g.dispose())
+  function createMergedMeshFromGeos(geos, material, castShadow = true, receiveShadow = true) {
+    if (!geos || geos.length === 0) return null
+    const validGeos = geos.filter(Boolean)
+    if (validGeos.length === 0) return null
+    const mergedGeo = BufferGeometryUtils.mergeGeometries(validGeos, false)
+    validGeos.forEach(g => g.dispose())
 
     const mesh = new THREE.Mesh(mergedGeo, material)
     mesh.castShadow = castShadow
@@ -116,42 +210,62 @@ export function buildMapMeshes(boxes) {
     return mesh
   }
 
-  function makeMaterial(texture, fallbackHex, roughness = 0.90) {
-    return new THREE.MeshStandardMaterial({
+  function createMergedMesh(boxList, material, castShadow = true, receiveShadow = true) {
+    if (!boxList || boxList.length === 0) return null
+    const geos = boxList.map(b => boxToGeometry(b, 0.5))
+    return createMergedMeshFromGeos(geos, material, castShadow, receiveShadow)
+  }
+
+  function makeLambertMaterial(texture, fallbackHex, emissiveColor = 0x000000, emissiveIntensity = 1.0) {
+    return new THREE.MeshLambertMaterial({
       map: texture || null,
       color: texture ? 0xffffff : fallbackHex,
-      roughness,
-      metalness: 0.0
+      emissive: emissiveColor,
+      emissiveIntensity
     })
   }
 
   // ── 1. Procedural Textures & Materials ──────────────────────────────────
   // Floors: Mid-dark stone pavers per zone (never blown out white)
-  const floorTexAttacker = createStoneFloorTexture('#8f8a80', '#5c5850')
-  const floorTexASide    = createStoneFloorTexture('#8a8277', '#565047')
-  const floorTexBSide    = createStoneFloorTexture('#86868a', '#545458')
-  const floorTexMarket   = createStoneFloorTexture('#7d756a', '#4e483f')
-  const floorTexDefender = createStoneFloorTexture('#85808a', '#524e58')
+  const floorTexAttacker = createStoneFloorTexture('#8f8a80')
+  const floorTexASide    = createStoneFloorTexture('#8a8277')
+  const floorTexBSide    = createStoneFloorTexture('#86868a')
+  const floorTexMarket   = createStoneFloorTexture('#7d756a')
+  const floorTexDefender = createStoneFloorTexture('#85808a')
   const floorTexL1Wood   = createWoodPlankTexture('#a07850', '#543b23')
 
-  const floorMatAttacker = makeMaterial(floorTexAttacker, 0x8f8a80, 0.92)
-  const floorMatASide    = makeMaterial(floorTexASide, 0x8a8277, 0.92)
-  const floorMatBSide    = makeMaterial(floorTexBSide, 0x86868a, 0.92)
-  const floorMatMarket   = makeMaterial(floorTexMarket, 0x7d756a, 0.92)
-  const floorMatDefender = makeMaterial(floorTexDefender, 0x85808a, 0.92)
-  const floorMatL1Wood   = makeMaterial(floorTexL1Wood, 0xa07850, 0.88)
+  const floorMatAttacker = makeLambertMaterial(floorTexAttacker, 0x8f8a80)
+  const floorMatASide    = makeLambertMaterial(floorTexASide, 0x8a8277)
+  const floorMatBSide    = makeLambertMaterial(floorTexBSide, 0x86868a)
+  const floorMatMarket   = makeLambertMaterial(floorTexMarket, 0x7d756a)
+  const floorMatDefender = makeLambertMaterial(floorTexDefender, 0x85808a)
+  const floorMatL1Wood   = makeLambertMaterial(floorTexL1Wood, 0xa07850)
 
   // Walls: Sandstone, plaster, terracotta, cool stone
-  const wallTexSandstone  = createSandstoneTexture('#c9b08a', '#9c8764')
-  const wallTexPlaster    = createPlasterTexture('#d8cfc0', '#b5ab9a')
-  const wallTexTerracotta = createTerracottaTexture('#b8654a', '#7d3822')
-  const wallTexStone      = createPlasterTexture('#b9b3a8', '#948e84')
+  const wallTexSandstone  = createSandstoneTexture('#c9b08a')
+  const wallTexPlaster    = createPlasterTexture('#d8cfc0')
+  const wallTexTerracotta = createTerracottaTexture('#b8654a')
+  const wallTexStone      = createPlasterTexture('#b9b3a8')
 
-  const wallMatAttacker = makeMaterial(wallTexSandstone, 0xc9b08a, 0.88)
-  const wallMatASide    = makeMaterial(wallTexSandstone, 0xc9b08a, 0.88)
-  const wallMatBSide    = makeMaterial(wallTexPlaster, 0xd8cfc0, 0.90)
-  const wallMatMarket   = makeMaterial(wallTexTerracotta, 0xb8654a, 0.88)
-  const wallMatDefender = makeMaterial(wallTexStone, 0xb9b3a8, 0.90)
+  // Outdoor wall materials
+  const wallMatAttacker = makeLambertMaterial(wallTexSandstone, 0xc9b08a)
+  const wallMatASide    = makeLambertMaterial(wallTexSandstone, 0xc9b08a)
+  const wallMatBSide    = makeLambertMaterial(wallTexPlaster, 0xd8cfc0)
+  const wallMatMarket   = makeLambertMaterial(wallTexTerracotta, 0xb8654a)
+  const wallMatDefender = makeLambertMaterial(wallTexStone, 0xb9b3a8)
+
+  // Indoor wall materials: raise wall emissive by 0.1 inside FULL-roofed regions
+  const indoorEmissiveAttacker = new THREE.Color(0xc9b08a).multiplyScalar(0.16)
+  const indoorEmissiveASide    = new THREE.Color(0xc9b08a).multiplyScalar(0.16)
+  const indoorEmissiveBSide    = new THREE.Color(0xd8cfc0).multiplyScalar(0.16)
+  const indoorEmissiveMarket   = new THREE.Color(0xb8654a).multiplyScalar(0.16)
+  const indoorEmissiveDefender = new THREE.Color(0xb9b3a8).multiplyScalar(0.16)
+
+  const wallMatIndoorAttacker = makeLambertMaterial(wallTexSandstone, 0xc9b08a, indoorEmissiveAttacker)
+  const wallMatIndoorASide    = makeLambertMaterial(wallTexSandstone, 0xc9b08a, indoorEmissiveASide)
+  const wallMatIndoorBSide    = makeLambertMaterial(wallTexPlaster, 0xd8cfc0, indoorEmissiveBSide)
+  const wallMatIndoorMarket   = makeLambertMaterial(wallTexTerracotta, 0xb8654a, indoorEmissiveMarket)
+  const wallMatIndoorDefender = makeLambertMaterial(wallTexStone, 0xb9b3a8, indoorEmissiveDefender)
 
   // Base Trims: Zone accent colors
   const trimTexAttacker = createTrimTexture('#b84a4a', '#782626')
@@ -160,75 +274,79 @@ export function buildMapMeshes(boxes) {
   const trimTexMarket   = createTrimTexture('#7a3520', '#4e1e10')
   const trimTexDefender = createTrimTexture('#4a7ab8', '#264e7d')
 
-  const trimMatAttacker = makeMaterial(trimTexAttacker, 0xb84a4a, 0.85)
-  const trimMatASide    = makeMaterial(trimTexASide, 0x7a5230, 0.85)
-  const trimMatBSide    = makeMaterial(trimTexBSide, 0x2f8f8a, 0.85)
-  const trimMatMarket   = makeMaterial(trimTexMarket, 0x7a3520, 0.85)
-  const trimMatDefender = makeMaterial(trimTexDefender, 0x4a7ab8, 0.85)
+  const trimMatAttacker = makeLambertMaterial(trimTexAttacker, 0xb84a4a)
+  const trimMatASide    = makeLambertMaterial(trimTexASide, 0x7a5230)
+  const trimMatBSide    = makeLambertMaterial(trimTexBSide, 0x2f8f8a)
+  const trimMatMarket   = makeLambertMaterial(trimTexMarket, 0x7a3520)
+  const trimMatDefender = makeLambertMaterial(trimTexDefender, 0x4a7ab8)
 
-  // Top Trim (Wall Cap Coping Stone)
-  const trimTexTop = createTrimTexture('#3d3d40', '#222224')
-  const trimMatTop = makeMaterial(trimTexTop, 0x3d3d40, 0.85)
+  // Top Trim (Wall Cap Coping Stone): same MeshLambert as wall, color = wall color darkened ~25%
+  const capMatAttacker = makeLambertMaterial(createTrimTexture('#978468', '#7f6f57'), 0x978468)
+  const capMatASide    = makeLambertMaterial(createTrimTexture('#978468', '#7f6f57'), 0x978468)
+  const capMatBSide    = makeLambertMaterial(createTrimTexture('#a29b90', '#89837a'), 0xa29b90)
+  const capMatMarket   = makeLambertMaterial(createTrimTexture('#8a4c38', '#743e2d'), 0x8a4c38)
+  const capMatDefender = makeLambertMaterial(createTrimTexture('#8b867e', '#75716a'), 0x8b867e)
 
-  // Roof Tiles: Blue-gray
+  // Roof & Eaves
+  // Roof Top: Blue-gray tiles (#5d7388)
   const roofTexTile = createRoofTileTexture('#5d7388', '#384959')
-  const roofMat     = makeMaterial(roofTexTile, 0x5d7388, 0.88)
+  const roofMat     = makeLambertMaterial(roofTexTile, 0x5d7388)
+
+  // Roof & Eave Undersides: wood planks texture, color #6b5238, lit normally, plus tiny emissive (0.15)
+  const roofUndersideTex = createWoodPlankTexture('#6b5238', '#4c3a27')
+  const roofUndersideMat = new THREE.MeshLambertMaterial({
+    map: roofUndersideTex || null,
+    color: 0xffffff,
+    emissive: new THREE.Color(0x6b5238).multiplyScalar(0.15)
+  })
 
   // Stairs & Rails
-  const stairTex = createStoneFloorTexture('#7c7e82', '#4b4d52')
-  const stairMat = makeMaterial(stairTex, 0x7c7e82, 0.85)
-  const railMatL0 = makeMaterial(trimTexTop, 0x3d3d40, 0.75)
-  const railMatL1 = makeMaterial(createWoodPlankTexture('#3d2b1a', '#22150a'), 0x3d2b1a, 0.82)
+  const stairTex = createStoneFloorTexture('#7c7e82')
+  const stairMat = makeLambertMaterial(stairTex, 0x7c7e82)
+  const railMatL0 = makeLambertMaterial(createTrimTexture('#3d3d40', '#222224'), 0x3d3d40)
+  const railMatL1 = makeLambertMaterial(createWoodPlankTexture('#3d2b1a', '#22150a'), 0x3d2b1a)
 
   // Props
   const crateTex     = createWoodPlankTexture('#8c7355', '#574229')
-  const crateMat     = makeMaterial(crateTex, 0x8c7355, 0.85)
-  const containerMat = new THREE.MeshStandardMaterial({
-    color: 0x2f5a6b, // Teal steel shipping container
-    roughness: 0.50,
-    metalness: 0.0   // No metalness per spec
-  })
-  const pillarMat    = makeMaterial(wallTexSandstone, 0x6e7075, 0.88)
-  const planterMat   = makeMaterial(trimTexBSide, 0x405c48, 0.88)
-  const stallMat     = makeMaterial(wallTexTerracotta, 0x9e5842, 0.88)
-  const awningMat    = makeMaterial(createTrimTexture('#e0b050', '#9c7528'), 0xe0b050, 0.85)
-  const windowMat    = makeMaterial(trimTexTop, 0x5a5c60, 0.80)
+  const crateMat     = makeLambertMaterial(crateTex, 0x8c7355)
+  const containerMat = new THREE.MeshLambertMaterial({ color: 0x2f5a6b })
+  const pillarMat    = makeLambertMaterial(wallTexSandstone, 0x6e7075)
+  const planterMat   = makeLambertMaterial(trimTexBSide, 0x405c48)
+  const stallMat     = makeLambertMaterial(wallTexTerracotta, 0x9e5842)
+  const awningMat    = makeLambertMaterial(createTrimTexture('#e0b050', '#9c7528'), 0xe0b050)
+  const windowMat    = makeLambertMaterial(createTrimTexture('#3d3d40', '#222224'), 0x5a5c60)
 
   // ── Debug Level Materials (F5) ──────────────────────────────────────────
-  const level0DebugMat = new THREE.MeshStandardMaterial({
-    color: 0x75787d, // Gray for Level 0
-    roughness: 0.88,
-    metalness: 0.0
-  })
-  const level1DebugMat = new THREE.MeshStandardMaterial({
-    color: 0xe67e22, // Orange for Level 1
-    roughness: 0.85,
-    metalness: 0.0
-  })
-  const stairDebugMat = new THREE.MeshStandardMaterial({
-    color: 0xf39c12, // Amber for Stairs
-    roughness: 0.85,
-    metalness: 0.0
-  })
+  const level0DebugMat = new THREE.MeshLambertMaterial({ color: 0x75787d })
+  const level1DebugMat = new THREE.MeshLambertMaterial({ color: 0xe67e22 })
+  const stairDebugMat  = new THREE.MeshLambertMaterial({ color: 0xf39c12 })
 
   // ── 2. Wall Boxes Partitioned by Nearest Walkable Region ────────────────
+  const FULL_ROOFED_REGIONS = ['attackerCave', 'aTeleRoom', 'aShowers', 'aCubby', 'bShortRoom', 'bHookah']
+
   const wallsByZone = {
-    attacker: [],
-    aSide: [],
-    bSide: [],
-    market: [],
-    defender: []
+    attacker: { outdoor: [], indoor: [] },
+    aSide:    { outdoor: [], indoor: [] },
+    bSide:    { outdoor: [], indoor: [] },
+    market:   { outdoor: [], indoor: [] },
+    defender: { outdoor: [], indoor: [] }
   }
 
   // Trim bands generated from wall boxes
   const baseTrimsByZone = {
     attacker: [],
-    aSide: [],
-    bSide: [],
-    market: [],
+    aSide:    [],
+    bSide:    [],
+    market:   [],
     defender: []
   }
-  const topTrims = []
+  const topTrimsByZone = {
+    attacker: [],
+    aSide:    [],
+    bSide:    [],
+    market:   [],
+    defender: []
+  }
 
   const isL1Region = (b) => {
     // aHeaven bounds [-54, -20, -44, -14], bHookah bounds [24, -4, 34, 4]
@@ -240,7 +358,13 @@ export function buildMapMeshes(boxes) {
   for (const b of boxes.wallBoxes || []) {
     const nearest = findNearestRegion(b, regions)
     const zone = nearest ? getRegionZone(nearest.id) : 'attacker'
-    wallsByZone[zone].push(b)
+    const isIndoor = nearest && FULL_ROOFED_REGIONS.includes(nearest.id)
+
+    if (isIndoor) {
+      wallsByZone[zone].indoor.push(b)
+    } else {
+      wallsByZone[zone].outdoor.push(b)
+    }
 
     // Generate architectural trim bands from wall boxes
     const wallHeight = b.topY - b.bottomY
@@ -256,8 +380,8 @@ export function buildMapMeshes(boxes) {
         type: 'trimBase'
       })
 
-      // 2. Dark top trim band / wall cap (topY - 0.25m to topY) with coping lip (2cm)
-      topTrims.push({
+      // 2. Wall cap (topY - 0.25m to topY) with coping lip (2cm), darkened ~25%
+      topTrimsByZone[zone].push({
         minX: b.minX - 0.02,
         maxX: b.maxX + 0.02,
         minZ: b.minZ - 0.02,
@@ -273,38 +397,47 @@ export function buildMapMeshes(boxes) {
   const isL1Wall = (b) => (b.bottomY >= 3.0)
 
   const wallConfig = [
-    { zone: 'attacker', mat: wallMatAttacker },
-    { zone: 'aSide',    mat: wallMatASide },
-    { zone: 'bSide',    mat: wallMatBSide },
-    { zone: 'market',   mat: wallMatMarket },
-    { zone: 'defender', mat: wallMatDefender }
+    { zone: 'attacker', matOutdoor: wallMatAttacker, matIndoor: wallMatIndoorAttacker, capMat: capMatAttacker, trimMat: trimMatAttacker },
+    { zone: 'aSide',    matOutdoor: wallMatASide,    matIndoor: wallMatIndoorASide,    capMat: capMatASide,    trimMat: trimMatASide },
+    { zone: 'bSide',    matOutdoor: wallMatBSide,    matIndoor: wallMatIndoorBSide,    capMat: capMatBSide,    trimMat: trimMatBSide },
+    { zone: 'market',   matOutdoor: wallMatMarket,   matIndoor: wallMatIndoorMarket,   capMat: capMatMarket,   trimMat: trimMatMarket },
+    { zone: 'defender', matOutdoor: wallMatDefender, matIndoor: wallMatIndoorDefender, capMat: capMatDefender, trimMat: trimMatDefender }
   ]
 
-  for (const { zone, mat } of wallConfig) {
-    const l0Walls = wallsByZone[zone].filter(w => !isL1Wall(w))
-    const l1Walls = wallsByZone[zone].filter(w => isL1Wall(w))
+  for (const { zone, matOutdoor, matIndoor, capMat, trimMat } of wallConfig) {
+    // Outdoor walls
+    const l0WallsOut = wallsByZone[zone].outdoor.filter(w => !isL1Wall(w))
+    const l1WallsOut = wallsByZone[zone].outdoor.filter(w => isL1Wall(w))
 
-    const l0WallMesh = createMergedMesh(l0Walls, mat, true, true)
-    if (l0WallMesh) {
-      l0WallMesh.userData.level = 0
-      l0WallMesh.userData.origMat = mat
+    const l0WallMeshOut = createMergedMesh(l0WallsOut, matOutdoor, true, true)
+    if (l0WallMeshOut) {
+      l0WallMeshOut.userData.level = 0
+      l0WallMeshOut.userData.origMat = matOutdoor
     }
 
-    const l1WallMesh = createMergedMesh(l1Walls, mat, true, true)
-    if (l1WallMesh) {
-      l1WallMesh.userData.level = 1
-      l1WallMesh.userData.origMat = mat
+    const l1WallMeshOut = createMergedMesh(l1WallsOut, matOutdoor, true, true)
+    if (l1WallMeshOut) {
+      l1WallMeshOut.userData.level = 1
+      l1WallMeshOut.userData.origMat = matOutdoor
+    }
+
+    // Indoor walls (with +0.1 emissive boost inside full-roofed regions)
+    const l0WallsIn = wallsByZone[zone].indoor.filter(w => !isL1Wall(w))
+    const l1WallsIn = wallsByZone[zone].indoor.filter(w => isL1Wall(w))
+
+    const l0WallMeshIn = createMergedMesh(l0WallsIn, matIndoor, true, true)
+    if (l0WallMeshIn) {
+      l0WallMeshIn.userData.level = 0
+      l0WallMeshIn.userData.origMat = matIndoor
+    }
+
+    const l1WallMeshIn = createMergedMesh(l1WallsIn, matIndoor, true, true)
+    if (l1WallMeshIn) {
+      l1WallMeshIn.userData.level = 1
+      l1WallMeshIn.userData.origMat = matIndoor
     }
 
     // Base trim mesh per zone
-    const trimMat = {
-      attacker: trimMatAttacker,
-      aSide: trimMatASide,
-      bSide: trimMatBSide,
-      market: trimMatMarket,
-      defender: trimMatDefender
-    }[zone]
-
     const l0Trims = baseTrimsByZone[zone].filter(t => !isL1Wall(t))
     const l1Trims = baseTrimsByZone[zone].filter(t => isL1Wall(t))
 
@@ -319,13 +452,58 @@ export function buildMapMeshes(boxes) {
       l1TrimMesh.userData.level = 1
       l1TrimMesh.userData.origMat = trimMat
     }
+
+    // Wall cap (top trim) mesh per zone (lit MeshLambert darkened ~25%)
+    const l0Caps = topTrimsByZone[zone].filter(t => !isL1Wall(t))
+    const l1Caps = topTrimsByZone[zone].filter(t => isL1Wall(t))
+
+    const l0CapMesh = createMergedMesh(l0Caps, capMat, true, true)
+    if (l0CapMesh) {
+      l0CapMesh.userData.level = 0
+      l0CapMesh.userData.origMat = capMat
+    }
+
+    const l1CapMesh = createMergedMesh(l1Caps, capMat, true, true)
+    if (l1CapMesh) {
+      l1CapMesh.userData.level = 1
+      l1CapMesh.userData.origMat = capMat
+    }
   }
 
-  // Merged top coping stone trim
-  const topTrimMesh = createMergedMesh(topTrims, trimMatTop, true, true)
-  if (topTrimMesh) {
-    topTrimMesh.userData.level = 0
-    topTrimMesh.userData.origMat = trimMatTop
+  // ── Emissive Ceiling Lamp Panels in FULL-roofed Regions ─────────────────
+  const regMap = new Map()
+  for (const r of regions) regMap.set(r.id, r)
+
+  const lampBoxes = []
+  for (const id of FULL_ROOFED_REGIONS) {
+    const r = regMap.get(id)
+    if (!r) continue
+    const [x0, z0, x1, z1] = r.rect
+    const cx = (x0 + x1) * 0.5
+    const cz = (z0 + z1) * 0.5
+    const floorY = r.level ? 3.5 : 0.0
+    const roofBottomY = floorY + 5.0
+
+    const rw = x1 - x0
+    const rd = z1 - z0
+    const lampW = Math.min(2.8, Math.max(2.0, rw * 0.35))
+    const lampD = Math.min(1.8, Math.max(1.2, rd * 0.35))
+
+    lampBoxes.push({
+      minX: cx - lampW * 0.5,
+      maxX: cx + lampW * 0.5,
+      minZ: cz - lampD * 0.5,
+      maxZ: cz + lampD * 0.5,
+      bottomY: roofBottomY - 0.08,
+      topY: roofBottomY,
+      type: 'ceilingLamp'
+    })
+  }
+  const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff })
+  const lampMesh = createMergedMesh(lampBoxes, lampMat, false, false)
+  if (lampMesh) {
+    lampMesh.userData.level = 0
+    lampMesh.userData.origMat = lampMat
   }
 
   // ── 3. Floors Partitioned by Zone ───────────────────────────────────────
@@ -379,11 +557,11 @@ export function buildMapMeshes(boxes) {
     const zone = nearest ? getRegionZone(nearest.id) : 'attacker'
     lintelsByZone[zone].push(b)
   }
-  for (const { zone, mat } of wallConfig) {
-    const lintelMesh = createMergedMesh(lintelsByZone[zone], mat, true, true)
+  for (const { zone, matOutdoor } of wallConfig) {
+    const lintelMesh = createMergedMesh(lintelsByZone[zone], matOutdoor, true, true)
     if (lintelMesh) {
       lintelMesh.userData.level = 0
-      lintelMesh.userData.origMat = mat
+      lintelMesh.userData.origMat = matOutdoor
     }
   }
 
@@ -415,18 +593,36 @@ export function buildMapMeshes(boxes) {
     l1RailMesh.userData.origMat = railMatL1
   }
 
-  // ── 8. Roofs & Eaves (Blue-Gray Tiles) ───────────────────────────────────
-  const l0Roofs = (boxes.roofBoxes || []).filter(b => b.bottomY < 6.0)
-  const l1Roofs = (boxes.roofBoxes || []).filter(b => b.bottomY >= 6.0)
-  const l0RoofMesh = createMergedMesh(l0Roofs, roofMat, true, true)
-  if (l0RoofMesh) {
-    l0RoofMesh.userData.level = 0
-    l0RoofMesh.userData.origMat = roofMat
+  // ── 8. Roofs & Eaves (Top/Sides: Blue-Gray Tile; Underside: Wood Planks #6b5238 + 0.15 emissive)
+  const l0RoofBoxes = (boxes.roofBoxes || []).filter(b => b.bottomY < 6.0)
+  const l1RoofBoxes = (boxes.roofBoxes || []).filter(b => b.bottomY >= 6.0)
+
+  // Roof Tops & Sides (Blue-gray tiles #5d7388)
+  const l0TopGeos = l0RoofBoxes.map(b => roofBoxToTopSidesGeometry(b, 0.5))
+  const l1TopGeos = l1RoofBoxes.map(b => roofBoxToTopSidesGeometry(b, 0.5))
+  const l0RoofTopMesh = createMergedMeshFromGeos(l0TopGeos, roofMat, true, true)
+  if (l0RoofTopMesh) {
+    l0RoofTopMesh.userData.level = 0
+    l0RoofTopMesh.userData.origMat = roofMat
   }
-  const l1RoofMesh = createMergedMesh(l1Roofs, roofMat, true, true)
-  if (l1RoofMesh) {
-    l1RoofMesh.userData.level = 1
-    l1RoofMesh.userData.origMat = roofMat
+  const l1RoofTopMesh = createMergedMeshFromGeos(l1TopGeos, roofMat, true, true)
+  if (l1RoofTopMesh) {
+    l1RoofTopMesh.userData.level = 1
+    l1RoofTopMesh.userData.origMat = roofMat
+  }
+
+  // Roof & Eave Undersides (Wood planks texture, color #6b5238, lit normally, +0.15 emissive)
+  const l0UndersideGeos = l0RoofBoxes.map(b => roofBoxToUndersideGeometry(b, 0.5))
+  const l1UndersideGeos = l1RoofBoxes.map(b => roofBoxToUndersideGeometry(b, 0.5))
+  const l0RoofUndersideMesh = createMergedMeshFromGeos(l0UndersideGeos, roofUndersideMat, false, true)
+  if (l0RoofUndersideMesh) {
+    l0RoofUndersideMesh.userData.level = 0
+    l0RoofUndersideMesh.userData.origMat = roofUndersideMat
+  }
+  const l1RoofUndersideMesh = createMergedMeshFromGeos(l1UndersideGeos, roofUndersideMat, false, true)
+  if (l1RoofUndersideMesh) {
+    l1RoofUndersideMesh.userData.level = 1
+    l1RoofUndersideMesh.userData.origMat = roofUndersideMat
   }
 
   // ── 9. Props Partitioned by Type ─────────────────────────────────────────
@@ -502,51 +698,35 @@ export function buildMapMeshes(boxes) {
     group.add(line)
   }
 
-  // ── 12. Teleporters (Glowing Portals & Exit Rings) ────────────────────────
+  // ── 12. Teleporters (Glowing Floor Ring & Thin Vertical Beam) ───────────
   for (const t of boxes.teleporterBoxes || []) {
-    const w = t.maxX - t.minX
-    const d = t.maxZ - t.minZ
     const cx = (t.minX + t.maxX) * 0.5
     const cz = (t.minZ + t.maxZ) * 0.5
+    const floorY = t.bottomY || 0.0
 
-    if (t.type === 'tp_entry') {
-      const padGeo = new THREE.PlaneGeometry(w, d)
-      const padMat = new THREE.MeshBasicMaterial({
-        color: 0x10b981,
-        transparent: true,
-        opacity: 0.65,
-        depthWrite: false
-      })
-      const padMesh = new THREE.Mesh(padGeo, padMat)
-      padMesh.rotation.x = -Math.PI * 0.5
-      padMesh.position.set(cx, 0.04, cz)
-      group.add(padMesh)
+    const isEntry = (t.type === 'tp_entry')
+    // Entry pad: purple (#b45bff), exit pad: teal (#06b6d4)
+    const colorHex = isEntry ? 0xb45bff : 0x06b6d4
 
-      const gateGeo = new THREE.PlaneGeometry(w * 0.8, 3.2)
-      const gateMat = new THREE.MeshBasicMaterial({
-        color: 0x34d399,
-        transparent: true,
-        opacity: 0.45,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
-      const gateMesh = new THREE.Mesh(gateGeo, gateMat)
-      gateMesh.position.set(cx, 1.6, cz)
-      group.add(gateMesh)
-    } else {
-      const exitGeo = new THREE.RingGeometry(1.0, 1.4, 32)
-      const exitMat = new THREE.MeshBasicMaterial({
-        color: 0x06b6d4,
-        transparent: true,
-        opacity: 0.6,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
-      const exitMesh = new THREE.Mesh(exitGeo, exitMat)
-      exitMesh.rotation.x = -Math.PI * 0.5
-      exitMesh.position.set(cx, 0.03, cz)
-      group.add(exitMesh)
-    }
+    // Glowing floor ring (0.2 m high, 4 m x 4 m)
+    const ringGeo = createRingGeometry(2.0, 1.5, 0.2)
+    const ringMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide })
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat)
+    ringMesh.position.set(cx, floorY, cz)
+    group.add(ringMesh)
+
+    // Thin vertical beam 3 m high, opacity 0.2
+    const beamGeo = new THREE.CylinderGeometry(0.25, 0.25, 3.0, 16)
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.2,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+    const beamMesh = new THREE.Mesh(beamGeo, beamMat)
+    beamMesh.position.set(cx, floorY + 1.5, cz)
+    group.add(beamMesh)
   }
 
   return group
